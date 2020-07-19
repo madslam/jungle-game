@@ -17,7 +17,7 @@ import Loader from './Loader';
 import {drawGrid} from './Grid';
 import {move} from './animation/moveAToB';
 
-const socket = io ('http://localhost:3000');
+const socket = io ('https://boiling-spire-48650.herokuapp.com/');
 
 const App = () => {
   const [game, setGame] = useState (false);
