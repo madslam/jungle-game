@@ -17,7 +17,7 @@ import Loader from './Loader';
 import {drawGrid} from './Grid';
 import {move} from './animation/moveAToB';
 
-const socket = io ('https://boiling-spire-48650.herokuapp.com/');
+const socket = io ('localhost:3000');
 
 const App = () => {
   const [game, setGame] = useState (false);
@@ -31,7 +31,6 @@ const App = () => {
 
   const [totem, _setTotem] = useState ();
   const [click, _setClick] = useState (false);
-  //const [players, setPlayers] = useState ([]);
 
   const [player, _setPlayer] = useState (null);
   const [state, setState] = useState ({
@@ -171,20 +170,7 @@ const App = () => {
       context.clearRect (0, 0, state.screen.width, state.screen.height);
     }, time);
   };
-  const update = useCallback (() => {
-    if (canvas.current) {
-      const context = canvas.current.getContext ('2d');
-      const contextPlayers = canvasPlayers.current.getContext ('2d');
-      const contextTotem = canvasTotem.current.getContext ('2d');
 
-      context.save ();
-      context.clearRect (0, 0, state.screen.width, state.screen.height);
-      //updatePlayers (contextPlayers);
-      //updateTotem (contextTotem);
-      // updateObjects (context);
-      context.restore ();
-    }
-  });
   const handleMouseMove = useCallback (({clientX, clientY}) => {
     if (canvas.current) {
       var rect = canvas.current.getBoundingClientRect ();
@@ -239,14 +225,6 @@ const App = () => {
     }
     socket.emit ('mouseClick', position);
   }, []); //eslint-disable-line
-  useEffect (
-    () => {
-      if (totem) {
-        requestAnimationFrame (update);
-      }
-    },
-    [totem, update, click]
-  );
 
   const handleResize = (value, e) => {
     /* setState ({
@@ -262,6 +240,7 @@ const App = () => {
       alert ('la partie est pleine');
       setGame ({full: true});
     });
+
     socket.on ('gameInit', ({player, game}) => {
       setPlayer (player);
       setGame (game);
@@ -296,12 +275,20 @@ const App = () => {
           const context = canvasTotem.current.getContext ('2d');
           requestAnimationFrame (() => updateTotem (context, totem));
         }
-
-        //setTotem (totem);
-        //  setPlayers (players);
       });
+
       socket.on ('nextRound', player => {
         console.log ('nextRound');
+      });
+      socket.on ('gameStop', function () {
+        console.log ('on stop la game');
+        setGame ({full: false});
+        setPlayer (null);
+        window.removeEventListener ('resize', handleResize);
+        window.removeEventListener ('mousemove', handleMouseMove);
+        window.removeEventListener ('mousedown', handleMouseDown);
+        window.removeEventListener ('mouseup', handleMouseUp);
+        window.removeEventListener ('click', handleMouseClick);
       });
       window.addEventListener ('resize', handleResize);
       window.addEventListener ('mousemove', handleMouseMove);
