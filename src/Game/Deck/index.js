@@ -31,23 +31,7 @@ export default class Deck {
     context.textAlign = 'center';
     context.fillStyle = 'steelblue';
 
-    if (this.bunchCards.length > 0) {
-      this.bunchCards.forEach (card => {
-        console.log ('oupsi', card);
-        context.save ();
-        context.beginPath ();
-        context.fillStyle = 'white';
-        context.translate (card.position.x, card.position.y);
-        context.rotate (card.rotation * Math.PI / 180);
-        context.rect (-40, -40, 80, 80);
-        context.fill ();
-        context.stroke ();
-
-        context.fillStyle = 'steelblue';
-        context.fillText (`${card.value}`, 0, 0);
-        context.restore ();
-      });
-    } else {
+    if ((this.bunchCards.length = 0)) {
       context.save ();
       context.translate (this.positionBunch.x, this.positionBunch.y);
       context.fillText (`no card`, 0, 0);

@@ -10,7 +10,7 @@ export default class Totem {
 
     context.save ();
     context.translate (this.position.x, this.position.y);
-    context.strokeStyle = '#ffffff';
+    context.strokeStyle = 'black';
     context.fillStyle = '#4ab7dd';
     context.lineWidth = 2;
     context.beginPath ();
@@ -18,6 +18,9 @@ export default class Totem {
 
     context.fill ();
     context.stroke ();
+    context.arc (0, 0, 333, 0, 2 * Math.PI);
+    context.stroke ();
+
     context.restore ();
   }
 }

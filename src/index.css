@@ -29,11 +29,12 @@ canvas {
   border: 2px solid black
 }
 canvas { position: absolute; }
-#ui-players { z-index: 4 }
-
-#ui-message { z-index: 3 }
-#ui-totem { z-index: 3 }
-#ui-layer { z-index: 2 }
-#ui-timer { z-index: 5 }
+#ui-players { z-index: 7 }
+#ui-cards-player { z-index:6 }
+#ui-bunch-cards { z-index: 4 }
+#ui-timer { z-index: 2 }
+#ui-message { z-index: 4 }
+#ui-totem { z-index: 4 }
+#ui-layer { z-index: 5 }
 
 #background-layer { z-index: 1 }

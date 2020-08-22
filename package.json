@@ -6,14 +6,19 @@
     "node": "12.x"
   },
   "dependencies": {
+    "@ant-design/icons": "^4.2.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "antd": "^4.5.4",
+    "firebase": "^7.18.0",
+    "formik": "^2.1.5",
     "i": "^0.3.6",
     "prettier": "^1.19.1",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "react-loader-spinner": "^3.1.14",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.0",
     "socket.io-client": "^2.3.0",
     "styled-components": "^5.0.1"

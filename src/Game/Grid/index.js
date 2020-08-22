@@ -1,5 +1,5 @@
 export const drawGrid = (context, width, height) => {
-  let s = 30;
+  let s = 20;
   let pL = s;
   let pT = s;
   let pR = s;
@@ -14,6 +14,11 @@ export const drawGrid = (context, width, height) => {
   for (var y = pT; y <= height - pB; y += s) {
     context.moveTo (pL, y);
     context.lineTo (width - pR, y);
+    context.font = '15px Comic Sans MS';
+    context.textAlign = 'center';
+    context.textAlign = 'center';
+    context.fillStyle = 'steelblue';
+    context.fillText (`${y}`, pL, y);
   }
   context.stroke ();
 };

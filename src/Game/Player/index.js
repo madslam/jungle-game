@@ -38,22 +38,6 @@ export default class Player {
     else if (this.position.x < 0) this.position.x = state.screen.width;
     if (this.position.y > state.screen.height) this.position.y = 0;
     else if (this.position.y < 0) this.position.y = state.screen.height;
-    if (this.drawCard.position) {
-      context.save ();
-      context.beginPath ();
-      context.fillStyle = 'white';
-      context.strokeStyle = 'black';
-      //   context.rotate (this.drawCard.rotation * Math.PI / 180);
-      context.rect (
-        this.drawCard.position.x - 40,
-        this.drawCard.position.y - 40,
-        80,
-        80
-      );
-      context.stroke ();
-      context.fill ();
-      context.restore ();
-    }
     context.save ();
 
     context.translate (this.position.x, this.position.y);
