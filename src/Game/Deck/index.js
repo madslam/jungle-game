@@ -21,21 +21,19 @@ export default class Deck {
     // Delete if it goes out of bounds
 
     context.save ();
+    context.strokeStyle = '#f986c8';
 
-    // context.strokeStyle = 'black';
-
-    //context.lineWidth = 1;
     context.beginPath ();
+    context.setLineDash ([13, 13]);
+    context.arc (
+      this.positionBunch.x,
+      this.positionBunch.y,
+      50,
+      0,
+      Math.PI * 2
+    );
+    context.stroke ();
 
-    context.font = '20px Comic Sans MS';
-    context.textAlign = 'center';
-    context.fillStyle = 'steelblue';
-
-    if ((this.bunchCards.length = 0)) {
-      context.save ();
-      context.translate (this.positionBunch.x, this.positionBunch.y);
-      context.fillText (`no card`, 0, 0);
-      context.restore ();
-    }
+    context.restore ();
   }
 }

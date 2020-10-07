@@ -9,9 +9,9 @@ export const easeOutBounce = (t, b, c, d) => {
     return c * (7.5625 * (t -= 2.625 / 2.75) * t + 0.984375) + b;
   }
 };
-var animationLength = 900;
+var animationLength = 500;
 export const objectReturn = (time, object, basePosition) => {
-  time = time + 5;
+  time = time + 2;
 
   let elapsed = time;
   if (elapsed > animationLength) {

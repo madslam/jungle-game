@@ -27,24 +27,16 @@ export default class Goal {
       context.fillStyle = '#4ef5d2';
     }
 
-    context.beginPath ();
-    context.arc (0, 0, this.radius, 0, 2 * Math.PI);
-
-    context.fill ();
     if (this.isPlaying) {
       context.beginPath ();
+
       context.lineWidth = 5;
 
       context.strokeStyle = '#f986c8';
       context.arc (0, 0, 90, this.timer, 2 * Math.PI);
       context.stroke ();
     }
-    context.font = '20px Comic Sans MS';
-    context.textAlign = 'center';
-    context.textAlign = 'center';
-    context.fillStyle = 'steelblue';
-    context.fillText (`player ${this.type}`, 0, 0);
-    context.stroke ();
+
     context.restore ();
   }
 }

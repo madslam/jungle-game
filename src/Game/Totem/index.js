@@ -18,8 +18,6 @@ export default class Totem {
 
     context.fill ();
     context.stroke ();
-    context.arc (0, 0, 333, 0, 2 * Math.PI);
-    context.stroke ();
 
     context.restore ();
   }

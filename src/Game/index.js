@@ -9,17 +9,18 @@ import '../App.css';
 import styled from 'styled-components';
 import io from 'socket.io-client';
 import {useParams, useHistory} from 'react-router-dom';
-import {message} from 'antd';
+import {message as messageAntd} from 'antd';
 
 import Player from './Player';
 import Card from './Card';
 import Totem from './Totem';
 import Goal from './Goal';
 import Deck from './Deck';
-import HealthBar from './HealthBar';
 import Loader from './Loader';
 import {drawGrid} from './Grid';
 import {objectReturn} from './animation/moveAToB';
+import Profile from './Profile';
+import {drawCircularAnimation} from './animation/circular';
 
 const updatePosition = (width, height, player, position) => {
   if (player.type === 2) {
@@ -55,7 +56,7 @@ const Game = () => {
   const canvasMessage = useRef (null);
   const canvasPlayers = useRef (null);
   const canvasAnimation = useRef (null);
-
+  const canvasScoreLooser = useRef (null);
   const canvasTotem = useRef (null);
   const canvasBunchCards = useRef (null);
   const canvasCard = useRef (null);
@@ -65,6 +66,7 @@ const Game = () => {
 
   const [player, _setPlayer] = useState (null);
   const playersAnimation = [];
+  const cardsLooseAnimation = {size: 0};
 
   const [state] = useState ({
     screen: {
@@ -175,8 +177,8 @@ const Game = () => {
     });
   };
   const updateObjects = (context, players) => {
-    const currentPlayer = playerRef.current;
     context.clearRect (0, 0, state.screen.width, state.screen.height);
+    const currentPlayer = playerRef.current;
 
     players.forEach (p => {
       const positionGoal = updatePosition (
@@ -185,37 +187,39 @@ const Game = () => {
         currentPlayer,
         p.goal.position
       );
+      const positionProfile = updatePosition (
+        state.screen.width,
+        state.screen.height,
+        currentPlayer,
+        p.profile.position
+      );
       const positionBunch = updatePosition (
         state.screen.width,
         state.screen.height,
         currentPlayer,
         p.deck.positionBunch
       );
-      const positionHealth = updatePosition (
-        state.screen.width,
-        state.screen.height,
-        currentPlayer,
-        p.deck.healthBarPosition
-      );
-      const {goal, deck, timer, isPlaying} = p;
+
+      const {goal, deck, profile, timer, isPlaying} = p;
       const newGoal = new Goal ({
         ...goal,
         position: positionGoal,
         timer,
         isPlaying,
       });
-      const newHealthBar = new HealthBar ({
-        healthBarValue: deck.healthBarValue,
-        position: positionHealth,
-      });
+
       const newDeck = new Deck ({
         ...deck,
         positionBunch,
       });
-      newGoal.render (state, context);
-      newDeck.render (state, context);
 
-      newHealthBar.render (state, context);
+      const newProfile = new Profile ({
+        ...profile,
+        position: positionProfile,
+      });
+      newDeck.render (state, context);
+      newGoal.render (state, context);
+      newProfile.render (state, context);
 
       p.deck.cards.forEach (c => {
         let positionCard = updatePosition (
@@ -235,6 +239,7 @@ const Game = () => {
     const context = canvasBackground.current.getContext ('2d');
     context.fillStyle = 'white';
     drawGrid (context, state.screen.width, state.screen.height);
+    drawCircularAnimation (3, 5, 2, 0, context);
     drawMessage ('ca commence ', 3000);
   };
   const drawMessage = (message, time) => {
@@ -347,7 +352,39 @@ const Game = () => {
         },
       });*/
   };
+  async function doAnimationLooser (players, cardsLooser, distance) {
+    const context = canvasScoreLooser.current.getContext ('2d');
 
+    if (distance <= 0) {
+      setTimeout (() => {
+        context.clearRect (0, 0, state.screen.width, state.screen.height);
+      }, 3000);
+      return;
+    }
+    context.clearRect (0, 0, state.screen.width, state.screen.height);
+
+    const newDistance = distance - 0.5;
+    context.fillStyle = 'red';
+    context.font = '20px Comic Sans MS';
+    const currentPlayer = playerRef.current;
+    players.forEach ((p, index) => {
+      const numberCards = cardsLooser[index].length;
+      const positionProfile = updatePosition (
+        state.screen.width,
+        state.screen.height,
+        currentPlayer,
+        p.profile.position
+      );
+      context.fillText (
+        `+ ${numberCards}`,
+        positionProfile.x + 50,
+        positionProfile.y - newDistance
+      );
+    });
+    requestAnimationFrame (() =>
+      doAnimationLooser (players, cardsLooser, newDistance)
+    );
+  }
   async function doAnimation (time, card, basePosition, players) {
     const context = canvasBunchCards.current.getContext ('2d');
 
@@ -358,20 +395,28 @@ const Game = () => {
         doAnimation (newTime, card, basePosition, players)
       );
     } else {
-      context.clearRect (0, 0, state.screen.width, state.screen.height);
+      cardsLooseAnimation.size -= 1;
+      if (cardsLooseAnimation.size === 0) {
+        context.clearRect (0, 0, state.screen.width, state.screen.height);
+        console.log (" c'est fiibnii");
+        socket.current.emit ('animationCardsToDeckDone');
+      }
     }
   }
   async function doAnimation2 (time, card, basePosition, players, player) {
     const context = canvasAnimation.current.getContext ('2d');
     const newTime = objectReturn (time, card, basePosition);
     updateDrawCard (context, playersAnimation);
-    console.log ('wessssj', playersAnimation);
     if (newTime > 0) {
       requestAnimationFrame (() =>
         doAnimation2 (newTime, card, basePosition, playersAnimation, player)
       );
     } else {
-      context.clearRect (0, 0, state.screen.width, state.screen.height);
+      console.log ('animation finiiii');
+      setTimeout (() => {
+        console.log ('on clear');
+        context.clearRect (0, 0, state.screen.width, state.screen.height);
+      }, 200);
       socket.current.emit ('animationDone', player);
       const indexAnimation = playersAnimation.reduce ((_, p, index) => {
         if (p.type === player.type) {
@@ -379,12 +424,11 @@ const Game = () => {
         }
       }, null);
       playersAnimation.splice (indexAnimation, 1);
-      console.log ("c'est fini", indexAnimation);
 
-      setTimeout (
+      /* setTimeout (
         () => context.clearRect (0, 0, state.screen.width, state.screen.height),
-        10
-      );
+        1000
+      );*/
     }
   }
 
@@ -395,13 +439,13 @@ const Game = () => {
       : io (`localhost:3001`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
-      message.error (
+      messageAntd.error (
         ' You cant access to the game, game do not exist. You will be redirect to the Room Page'
       );
       setTimeout (() => history.push (`/rooms`), 3000);
     });
     socket.current.on ('gameFull', function () {
-      message.error (
+      messageAntd.error (
         ' You cant access to the game, game is full. You will be redirect to the Room Page'
       );
       setGame ({full: true});
@@ -418,29 +462,29 @@ const Game = () => {
     socket.current.on ('gameWillStart', game => {
       setGame (game);
     });
-    socket.current.on ('animation', ({players, position}) => {
-      let bunchCards = players.reduce ((cards, p) => {
-        if (p.deck.bunchCards.length > 4) {
-          const reversed = p.deck.bunchCards.reverse ();
-          const newBunchCard = reversed.slice (0, 4);
-          p.deck.bunchCards = newBunchCard.reverse ();
-        }
-        return [...cards, ...p.deck.bunchCards];
-      }, []);
+    socket.current.on ('animation', ({playersLost, cardsLooser}) => {
+      console.log ('carde loooooooser', cardsLooser);
+      doAnimationLooser (playersLost, cardsLooser, 30);
 
-      bunchCards.forEach (card =>
-        setTimeout (() => {
-          requestAnimationFrame (() =>
-            doAnimation (0, card, position, players)
-          );
-        }, 100)
-      );
+      playersLost.forEach ((p, index) => {
+        const cards = cardsLooser[index];
+        const position = p.goal.position;
+        const cardsDeck = [...cards, ...p.deck.bunchCards];
+
+        p.deck.bunchCards = cardsDeck;
+        cardsLooseAnimation.size += cardsDeck.length;
+        p.deck.bunchCards.forEach (card =>
+          setTimeout (() => {
+            requestAnimationFrame (() =>
+              doAnimation (0, card, position, playersLost)
+            );
+          }, 100)
+        );
+      });
     });
     socket.current.on ('animation2', ({player, position, players}) => {
       const pl = players.find (p => p.id === player.id);
-      console.log ('on ajoute un jouer', pl);
       playersAnimation.push (pl);
-      console.log ('elfamoso liste', playersAnimation);
 
       requestAnimationFrame (() =>
         doAnimation2 (0, pl.drawCard, position, players, pl)
@@ -453,8 +497,16 @@ const Game = () => {
       setTotem (totem);
       initGame ();
       socket.current.on ('message', ({message, time}) => {
-        console.log ('j ai un message', message);
-        drawMessage (message, time);
+        messageAntd.success ({
+          content: message,
+          duration: '2',
+          className: 'custom-class',
+          style: {
+            marginTop: '40vh',
+            fontSize: '40px',
+            zIndex: 100,
+          },
+        });
       });
       socket.current.on ('update', gameUpdate => {
         if (!game) {
@@ -550,6 +602,12 @@ const Game = () => {
           width={state.screen.width}
           height={state.screen.height}
           ref={canvasBackground}
+        />
+        <canvas
+          id="ui-looser"
+          width={state.screen.width}
+          height={state.screen.height}
+          ref={canvasScoreLooser}
         />
 
         <canvas
