@@ -15,7 +15,7 @@ CanvasRenderingContext2D.prototype.roundRect = function (
   this.arcTo (x + width, y + height, x, y + height, radius);
   this.arcTo (x, y + height, x, y, radius);
   this.arcTo (x, y, x + width, y, radius);
-  this.lineWidth = 2;
+  this.lineWidth = 4;
   this.strokeStyle = '#f986c8';
   this.stroke ();
   this.closePath ();
@@ -30,7 +30,7 @@ CanvasRenderingContext2D.prototype.roundRect = function (
     this.arcTo (x + width - health, y + height, x, y + height, radiusEnd);
     this.arcTo (x, y + height, x, y, radius);
     this.arcTo (x, y, x + width, y, radius);
-    this.fillStyle = '#22CB71';
+    this.fillStyle = 'white';
     this.fill ('nonzero');
     this.closePath ();
   }

@@ -12,6 +12,7 @@
     "@testing-library/user-event": "^7.1.2",
     "antd": "^4.5.4",
     "firebase": "^7.18.0",
+    "firebaseui": "^4.6.1",
     "formik": "^2.1.5",
     "i": "^0.3.6",
     "prettier": "^1.19.1",

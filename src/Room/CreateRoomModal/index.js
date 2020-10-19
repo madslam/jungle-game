@@ -1,5 +1,5 @@
-import {Modal, Button, Input, Tag, message} from 'antd';
-import React, {useState} from 'react';
+import {Modal, Button, Input, Tag, Divider, Row, Col, message} from 'antd';
+import React, {useState, Fragment} from 'react';
 import {Formik} from 'formik';
 import {useHistory} from 'react-router-dom';
 import {CopyOutlined} from '@ant-design/icons';
@@ -45,28 +45,28 @@ const CreateRoomModal = () => {
         onCancel={handleCancel}
         footer={null}
       >
+        {' '} <Divider orientation="left">Create your game</Divider>
+
         {state.isGameCreate
-          ? <div>
-              <Button
-                type="primary"
-                onClick={() => history.push (`/game/${state.gameId}`)}
-              >
-                join the game
-              </Button>
-              <p>
-                {' '}
-                if you want to play with friend send this url :
-                <Tag
-                  onClick={() =>
-                    copyGameUrl (
-                      `${window.location.origin}/game/${state.gameId}`
-                    )}
-                  icon={<CopyOutlined />}
+          ? <Fragment>
+              <Col>
+                <Button
+                  type="primary"
+                  onClick={() => history.push (`/game/${state.gameId}`)}
                 >
-                  {`${window.location.origin}/game/${state.gameId}`}
-                </Tag>
-              </p>
-            </div>
+                  join the game
+                </Button>
+              </Col>
+              <Tag
+                onClick={() =>
+                  copyGameUrl (
+                    `${window.location.origin}/game/${state.gameId}`
+                  )}
+                icon={<CopyOutlined />}
+              >
+                {`${window.location.origin}/game/${state.gameId}`}
+              </Tag>
+            </Fragment>
           : <Formik
               initialValues={{name: '', numberPlayer: '2'}}
               validate={values => {

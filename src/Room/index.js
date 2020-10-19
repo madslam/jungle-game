@@ -1,28 +1,15 @@
 import React, {useState, useEffect} from 'react';
-import {Table, Button, Space, message} from 'antd';
+import {Button, message, Layout, Row, Col} from 'antd';
 import {useHistory} from 'react-router-dom';
 
 import {db} from '../database/firebase';
 import CreateRoomModal from './CreateRoomModal';
-
-const MAX_PLAYERS = 4;
-const columns = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
-  },
-  {
-    title: 'players',
-    dataIndex: 'playersConnected',
-    render: (_, record) => `${record.playersConnected}/${record.numberPlayer}`,
-  },
-];
+import {signInWithGoogle} from '../database/firebase';
+import SkinSelection from '../Lobby/SkinSelection';
 const Room = () => {
   const [rooms, setRooms] = useState ([]);
   const [loading, setLoading] = useState (false);
   const history = useHistory ();
-
   useEffect (() => {
     getRooms ();
   }, []);
@@ -55,32 +42,35 @@ const Room = () => {
       history.push (`/game/${doc.id}`);
     });
   };
-  return (
-    <div>
-      <Space>
-        <Button type="primary" onClick={getRooms}>Refresh room</Button>
-        <CreateRoomModal />
-        <Button type="primary" onClick={joinRandomRoom}>
-          join random room
-        </Button>
-      </Space>
 
-      <Table
-        dataSource={rooms}
-        columns={columns}
-        loading={loading}
-        onRow={record => {
-          return {
-            onClick: () => {
-              const {playersConnected, numberPlayer, id} = record;
-              if (playersConnected < numberPlayer) {
-                history.push (`/game/${id}`);
-              }
-            }, // click row
-          };
-        }}
-      />
-    </div>
+  return (
+    <Layout className="center">
+      <Row gutter={[16, 16]} justify="center">
+        <Col>
+          <Button type="primary" onClick={getRooms}>Refresh room</Button>
+        </Col>
+        <Col>
+          <CreateRoomModal />
+        </Col>
+        <Col>
+          <Button type="primary" onClick={joinRandomRoom}>
+            join random room
+          </Button>
+        </Col>
+        <Col />
+      </Row>
+
+      <Row className="login-buttons" gutter={24} justify="center">
+        <button className="login-provider-button" onClick={signInWithGoogle}>
+          <img
+            src="https://img.icons8.com/ios-filled/50/000000/google-logo.png"
+            alt="google icon"
+          />
+          <span> Continue with Google</span>
+        </button>
+      </Row>
+
+    </Layout>
   );
 };
 

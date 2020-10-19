@@ -1,42 +1,57 @@
+const colors = [
+  {r: 255, g: 71, b: 71},
+  {r: 0, g: 206, b: 237},
+  {r: 255, g: 255, b: 255},
+];
+
 export default class Particle {
-  constructor (args) {
-    this.position = args.position;
-    this.velocity = args.velocity;
-    this.radius = args.size;
-    this.lifeSpan = args.lifeSpan;
-    this.inertia = 0.98;
+  constructor({x, y, color, size, weigth}) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = size;
+    this.weigth = weigth;
+    this.opacity = 1;
+
+    this.randomColor = Math.floor (Math.random () * colors.length);
   }
 
-  destroy () {
-    this.delete = true;
-  }
-
-  render (state, context) {
-    // Move
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-    this.velocity.x *= this.inertia;
-    this.velocity.y *= this.inertia;
-
-    // Shrink
-    this.radius -= 0.1;
-    if (this.radius < 0.1) {
-      this.radius = 0.1;
-    }
-    if (this.lifeSpan-- < 0) {
-      //this.destroy ();
-    }
-
-    // Draw
-    context.save ();
-    context.translate (this.position.x, this.position.y);
-    context.fillStyle = 'black';
-    context.lineWidth = 2;
+  render (context) {
     context.beginPath ();
-    context.moveTo (0, -this.radius);
-    context.arc (0, 0, this.radius, 0, 2 * Math.PI);
-    context.closePath ();
+
+    context.arc (this.x, this.y, this.size, 0, 2 * Math.PI, false);
+    context.fillStyle = 'white';
     context.fill ();
-    context.restore ();
+  }
+  renderCircle (context) {
+    context.beginPath ();
+
+    context.arc (this.x, this.y, this.size + 1, 0, 2 * Math.PI, false);
+    context.strokeStyle =
+      'rgba(' +
+      colors[this.randomColor].r +
+      ',' +
+      colors[this.randomColor].g +
+      ',' +
+      colors[this.randomColor].b +
+      ',' +
+      this.opacity +
+      ')';
+
+    context.stroke ();
+  }
+  update (mousePosition) {
+    this.size -= 0.3;
+    if (this.size < 0) {
+      this.x = mousePosition.x + (Math.random () * 20 - 10);
+      this.y = mousePosition.y + (Math.random () * 20 - 10);
+      this.size = Math.random () * 10 + 2;
+      this.weigth = Math.random () * 2 - 0.5;
+    }
+    this.y += this.weigth;
+    this.weigth += 0.01;
+    if (this.y > 900 - this.size) {
+      this.weigth *= -0.01;
+    }
   }
 }

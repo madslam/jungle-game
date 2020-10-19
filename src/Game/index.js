@@ -21,29 +21,14 @@ import {drawGrid} from './Grid';
 import {objectReturn} from './animation/moveAToB';
 import Profile from './Profile';
 import {drawCircularAnimation} from './animation/circular';
-
-const updatePosition = (width, height, player, position) => {
-  if (player.type === 2) {
-    return {
-      x: width - position.x,
-      y: height - position.y,
-    };
-  }
-  if (player.type === 3) {
-    return {
-      x: height - position.y,
-      y: width - position.x,
-    };
-  }
-  if (player.type === 4) {
-    return {
-      x: position.y,
-      y: position.x,
-    };
-  }
-  return position;
-};
+import modal from './Modal';
+import Lobby from '../Lobby';
+import {GAME_WIDTH, GAME_HEIGHT, updatePosition} from './utils';
+import {initParticle, animateParticle} from './animation/mouse-particle';
+import {initializeParticles} from './animation/light-particle';
 const Game = () => {
+  const mousePlayer = {};
+
   const {id} = useParams ();
   const history = useHistory ();
 
@@ -53,13 +38,14 @@ const Game = () => {
 
   const canvas = useRef (null);
   const canvasBackground = useRef (null);
-  const canvasMessage = useRef (null);
+  const canvasMouseAnimation = useRef (null);
   const canvasPlayers = useRef (null);
   const canvasAnimation = useRef (null);
   const canvasScoreLooser = useRef (null);
   const canvasTotem = useRef (null);
   const canvasBunchCards = useRef (null);
   const canvasCard = useRef (null);
+  const canvasTotemAnimation = useRef (null);
 
   const [totem, _setTotem] = useState ();
   const [click, _setClick] = useState (false);
@@ -72,6 +58,8 @@ const Game = () => {
     screen: {
       width: 900,
       height: 900,
+      widthUser: window.innerWidth,
+      heightUser: window.innerHeight,
       ratio: window.devicePixelRatio || 1,
     },
   });
@@ -97,12 +85,7 @@ const Game = () => {
     context.clearRect (0, 0, state.screen.width, state.screen.height);
 
     players.forEach (p => {
-      const positionPlayer = updatePosition (
-        state.screen.width,
-        state.screen.height,
-        currentPlayer,
-        p.position
-      );
+      const positionPlayer = updatePosition (currentPlayer, p.position);
 
       const np = new Player ({
         ...p,
@@ -119,8 +102,6 @@ const Game = () => {
       const positionDrawCard = p.drawCard.position;
       if (positionDrawCard) {
         const positionDrawCard = updatePosition (
-          state.screen.width,
-          state.screen.height,
           currentPlayer,
           p.drawCard.position
         );
@@ -137,12 +118,7 @@ const Game = () => {
   const updateTotem = (context, totem) => {
     const currentPlayer = playerRef.current;
     context.clearRect (0, 0, state.screen.width, state.screen.height);
-    const totemPosition = updatePosition (
-      state.screen.width,
-      state.screen.height,
-      currentPlayer,
-      totem.position
-    );
+    const totemPosition = updatePosition (currentPlayer, totem.position);
     const newTotem = new Totem ({
       position: totemPosition,
       playerMove: totem.playerMove,
@@ -162,12 +138,7 @@ const Game = () => {
         bunchCards = newBunchCard.reverse ();
       }
       bunchCards.forEach (card => {
-        const position = updatePosition (
-          state.screen.width,
-          state.screen.height,
-          currentPlayer,
-          card.position
-        );
+        const position = updatePosition (currentPlayer, card.position);
         const newCard = new Card ({
           ...card,
           position,
@@ -181,21 +152,12 @@ const Game = () => {
     const currentPlayer = playerRef.current;
 
     players.forEach (p => {
-      const positionGoal = updatePosition (
-        state.screen.width,
-        state.screen.height,
-        currentPlayer,
-        p.goal.position
-      );
+      const positionGoal = updatePosition (currentPlayer, p.goal.position);
       const positionProfile = updatePosition (
-        state.screen.width,
-        state.screen.height,
         currentPlayer,
         p.profile.position
       );
       const positionBunch = updatePosition (
-        state.screen.width,
-        state.screen.height,
         currentPlayer,
         p.deck.positionBunch
       );
@@ -222,12 +184,7 @@ const Game = () => {
       newProfile.render (state, context);
 
       p.deck.cards.forEach (c => {
-        let positionCard = updatePosition (
-          state.screen.width,
-          state.screen.height,
-          currentPlayer,
-          c.position
-        );
+        let positionCard = updatePosition (currentPlayer, c.position);
         const card = new Card ({...c, position: positionCard});
 
         card.render (state, context);
@@ -237,20 +194,28 @@ const Game = () => {
 
   const initGame = () => {
     const context = canvasBackground.current.getContext ('2d');
-    context.fillStyle = 'white';
-    drawGrid (context, state.screen.width, state.screen.height);
-    drawCircularAnimation (3, 5, 2, 0, context);
-    drawMessage ('ca commence ', 3000);
+    const contextTotem = canvasTotemAnimation.current.getContext ('2d');
+    // drawGrid (context, state.screen.width, state.screen.height);
+    drawCircularAnimation (contextTotem, 0.01, 0);
+    initializeParticles (
+      context,
+      state.screen.widthUser,
+      state.screen.heightUser
+    );
+
+    drawMessage ('It Begin ', 2);
   };
   const drawMessage = (message, time) => {
-    const context = canvasMessage.current.getContext ('2d');
-    context.font = '60px Comic Sans MS';
-    context.textAlign = 'center';
-    context.fillStyle = 'black';
-    context.fillText (message, state.screen.width / 2, state.screen.height / 2);
-    setTimeout (() => {
-      context.clearRect (0, 0, state.screen.width, state.screen.height);
-    }, time);
+    messageAntd.success ({
+      content: message,
+      duration: time,
+      className: 'custom-class',
+      style: {
+        marginTop: '40vh',
+        fontSize: '40px',
+        zIndex: 100,
+      },
+    });
   };
 
   const handleMouseMove = useCallback (({clientX, clientY}) => {
@@ -261,6 +226,7 @@ const Game = () => {
         x: clientX - rect.left,
         y: clientY - rect.top,
       };
+
       if (playerRef.current.type === 2) {
         position = {
           x: state.screen.width - position.x,
@@ -353,6 +319,9 @@ const Game = () => {
       });*/
   };
   async function doAnimationLooser (players, cardsLooser, distance) {
+    if (!canvasScoreLooser.current) {
+      return;
+    }
     const context = canvasScoreLooser.current.getContext ('2d');
 
     if (distance <= 0) {
@@ -370,8 +339,6 @@ const Game = () => {
     players.forEach ((p, index) => {
       const numberCards = cardsLooser[index].length;
       const positionProfile = updatePosition (
-        state.screen.width,
-        state.screen.height,
         currentPlayer,
         p.profile.position
       );
@@ -386,6 +353,9 @@ const Game = () => {
     );
   }
   async function doAnimation (time, card, basePosition, players) {
+    if (!canvasBunchCards.current) {
+      return;
+    }
     const context = canvasBunchCards.current.getContext ('2d');
 
     const newTime = objectReturn (time, card, basePosition);
@@ -398,12 +368,14 @@ const Game = () => {
       cardsLooseAnimation.size -= 1;
       if (cardsLooseAnimation.size === 0) {
         context.clearRect (0, 0, state.screen.width, state.screen.height);
-        console.log (" c'est fiibnii");
         socket.current.emit ('animationCardsToDeckDone');
       }
     }
   }
-  async function doAnimation2 (time, card, basePosition, players, player) {
+  function doAnimation2 (time, card, basePosition, players, player) {
+    if (!canvasAnimation.current) {
+      return;
+    }
     const context = canvasAnimation.current.getContext ('2d');
     const newTime = objectReturn (time, card, basePosition);
     updateDrawCard (context, playersAnimation);
@@ -412,9 +384,7 @@ const Game = () => {
         doAnimation2 (newTime, card, basePosition, playersAnimation, player)
       );
     } else {
-      console.log ('animation finiiii');
       setTimeout (() => {
-        console.log ('on clear');
         context.clearRect (0, 0, state.screen.width, state.screen.height);
       }, 200);
       socket.current.emit ('animationDone', player);
@@ -433,10 +403,9 @@ const Game = () => {
   }
 
   useLayoutEffect (() => {
-    console.log ('loooooooool', id);
     socket.current = id
-      ? io (`localhost:3001?id=${id}`)
-      : io (`localhost:3001`);
+      ? io (`localhost:8080/?id=${id}`)
+      : io (`localhost:8080/`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
       messageAntd.error (
@@ -463,7 +432,6 @@ const Game = () => {
       setGame (game);
     });
     socket.current.on ('animation', ({playersLost, cardsLooser}) => {
-      console.log ('carde loooooooser', cardsLooser);
       doAnimationLooser (playersLost, cardsLooser, 30);
 
       playersLost.forEach ((p, index) => {
@@ -493,20 +461,18 @@ const Game = () => {
 
     socket.current.on ('gameStart', game => {
       setGame (game);
-      const {totem} = game;
+      const {totem, players} = game;
+      players.forEach (p => {
+        const particles = initParticle ();
+        mousePlayer[p.type] = {position: p.position, particles, skin: p.skin};
+      });
+      const context = canvasMouseAnimation.current.getContext ('2d');
+
+      animateParticle (context, mousePlayer, playerRef);
       setTotem (totem);
       initGame ();
-      socket.current.on ('message', ({message, time}) => {
-        messageAntd.success ({
-          content: message,
-          duration: '2',
-          className: 'custom-class',
-          style: {
-            marginTop: '40vh',
-            fontSize: '40px',
-            zIndex: 100,
-          },
-        });
+      socket.current.on ('message', ({message}) => {
+        drawMessage (message, 2);
       });
       socket.current.on ('update', gameUpdate => {
         if (!game) {
@@ -527,6 +493,9 @@ const Game = () => {
           requestAnimationFrame (() => updateObjects (context, players));
         }
         if (players) {
+          players.forEach (p => {
+            mousePlayer[p.type].position = p.position;
+          });
           const contextPlayers = canvasPlayers.current.getContext ('2d');
           requestAnimationFrame (() => updatePlayers (contextPlayers, players));
         }
@@ -535,18 +504,32 @@ const Game = () => {
           requestAnimationFrame (() => updateTotem (context, totem));
         }
       });
-
+      socket.current.on ('gameEgality', () => {
+        console.log ('il y a égalité');
+        drawMessage ('Egality !', 2);
+        setTimeout (
+          () =>
+            modal ({
+              redirect: () => history.push (`/rooms`),
+              title: 'Egality, no one with the game',
+            }),
+          2000
+        );
+      });
       socket.current.on ('gameFinish', ({playersWin}) => {
-        window.removeEventListener ('resize', handleResize);
-        window.removeEventListener ('mousemove', handleMouseMove);
-        window.removeEventListener ('mousedown', handleMouseDown);
-        window.removeEventListener ('mouseup', handleMouseUp);
-        window.removeEventListener ('click', handleMouseClick);
         const winners = playersWin.reduce (
           (acc, p) => (acc = acc + ' player ' + p.type),
           ''
         );
-        drawMessage (winners + ' Win the Game !', 10000);
+        drawMessage (winners + ' Win the Game !', 2);
+        setTimeout (
+          () =>
+            modal ({
+              redirect: () => history.push (`/rooms`),
+              title: winners + ' won the game',
+            }),
+          2000
+        );
       });
       socket.current.on ('gameStop', ({game}) => {
         window.removeEventListener ('resize', handleResize);
@@ -571,7 +554,6 @@ const Game = () => {
   }, []); //eslint-disable-line
   useEffect (
     () => () => {
-      console.log ('on est laaa', socket.current);
       window.removeEventListener ('resize', handleResize);
       window.removeEventListener ('mousemove', handleMouseMove);
       window.removeEventListener ('mousedown', handleMouseDown);
@@ -595,64 +577,72 @@ const Game = () => {
   }
 
   return !game.start
-    ? <Loader game={game} />
+    ? <Lobby game={game} socket={socket} />
     : <div>
         <canvas
           id="background-layer"
-          width={state.screen.width}
-          height={state.screen.height}
+          width={state.screen.widthUser}
+          height={state.screen.heightUser}
           ref={canvasBackground}
         />
-        <canvas
-          id="ui-looser"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasScoreLooser}
-        />
+        <div id="game">
+          <canvas
+            id="ui-looser"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasScoreLooser}
+          />
 
-        <canvas
-          id="ui-layer"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvas}
-        />
+          <canvas
+            id="ui-layer"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvas}
+          />
+          <canvas
+            id="ui-totem-animation"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasTotemAnimation}
+          />
 
-        <canvas
-          id="ui-totem"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasTotem}
-        />
-        <canvas
-          id="ui-bunch-cards"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasBunchCards}
-        />
-        <canvas
-          id="ui-cards-player"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasCard}
-        />
-        <canvas
-          id="ui-players"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasPlayers}
-        />
-        <canvas
-          id="ui-cards-player"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasAnimation}
-        />
-        <canvas
-          id="ui-message"
-          width={state.screen.width}
-          height={state.screen.height}
-          ref={canvasMessage}
-        />
+          <canvas
+            id="ui-totem"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasTotem}
+          />
+          <canvas
+            id="ui-bunch-cards"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasBunchCards}
+          />
+          <canvas
+            id="ui-cards-player"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasCard}
+          />
+          <canvas
+            id="ui-players"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasPlayers}
+          />
+          <canvas
+            id="ui-cards-player"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasAnimation}
+          />
+          <canvas
+            id="ui-mouse-animation"
+            width={state.screen.width}
+            height={state.screen.height}
+            ref={canvasMouseAnimation}
+          />
+        </div>
       </div>;
 };
 

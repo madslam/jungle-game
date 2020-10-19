@@ -21,8 +21,6 @@ export default class Player {
     this.isPlaying = isPlaying;
     this.id = id;
     this.type = type;
-    this.goal = new Goal ({type, isPlaying, timer});
-    this.deck = new Deck ({type, cards});
     this.drawCard = drawCard;
   }
 
@@ -32,12 +30,17 @@ export default class Player {
   setDeck (deck) {
     this.deck = deck;
   }
+  animateParticle (context) {
+    context.clearRect (0, 0, 900, 900);
+    this.particleArray.forEach (particle => {
+      particle.update (this.position);
+
+      particle.render (context);
+    });
+    console.log ('hihihihihihihihihihihi');
+    requestAnimationFrame (() => this.animateParticle (context));
+  }
   render (state, context) {
-    // Screen edges
-    if (this.position.x > state.screen.width) this.position.x = 0;
-    else if (this.position.x < 0) this.position.x = state.screen.width;
-    if (this.position.y > state.screen.height) this.position.y = 0;
-    else if (this.position.y < 0) this.position.y = state.screen.height;
     context.save ();
 
     context.translate (this.position.x, this.position.y);
@@ -51,7 +54,9 @@ export default class Player {
       context.fillStyle = 'red';
     }
     context.textAlign = 'center';
-    context.fillText (this.type, 0, 50);
+    if (this.type) {
+      context.fillText (this.type, 0, 50);
+    }
     context.fill ();
 
     context.restore ();

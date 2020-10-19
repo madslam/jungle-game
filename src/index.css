@@ -5,6 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height:0;
+  background-color: rgb(0, 0, 0);
 }
 
 code {
@@ -12,7 +14,24 @@ code {
     monospace;
 }
 
-canvas {
+
+#stage {
+  width: 480px;
+  height: 320px;
+  position: relative;
+  border: 2px solid black
+}
+
+.center {
+  margin: auto;
+  margin-top: 30vh; /* poussé de la moitié de hauteur de viewport */
+  width: 50%;
+  border-radius: 15px;
+  padding: 20px;
+}
+
+#game > canvas {
+  position: absolute;
   padding-left: 0;
   padding-right: 0;
   margin-left: auto;
@@ -23,19 +42,31 @@ canvas {
   cursor:none; 
 
 }
-#stage {
-  width: 480px;
-  height: 320px;
-  position: relative;
-  border: 2px solid black
-}
-canvas { position: absolute; }
-#ui-players { z-index: 7 }
-#ui-cards-player { z-index:6 }
-#ui-looser { z-index:6 }
-#ui-bunch-cards { z-index: 4 }
+#ui-players { z-index: 100 }
+#ui-cards-player { z-index:50 }
+#ui-looser { z-index:50 }
+#ui-bunch-cards { z-index: 50 }
 #ui-timer { z-index: 2 }
-#ui-message { z-index: 4 }
-#ui-totem { z-index: 4 }
-#ui-layer { z-index: 5 }
-#background-layer { z-index: 1 }
+#ui-mouse-animation { z-index: 100}
+#ui-totem { z-index: 55 }
+#ui-totem-animation { z-index: 3 }
+
+#ui-layer { z-index: 40 }
+#background-layer { z-index: 1;
+height: 100%;
+margin: 0;
+position: fixed;
+}
+
+
+.skin {
+  background-color: black;
+  cursor: pointer;
+  border: solid 2px;}
+
+.skin-select {
+  background-color: black;
+
+  border: solid 4px;
+
+}
