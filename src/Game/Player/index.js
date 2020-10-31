@@ -1,45 +1,71 @@
-import Goal from '../Goal';
-import Deck from '../Deck';
+import {GAME_WIDTH, GAME_HEIGHT} from '../utils';
 import Particle from '../Particle';
 
 export default class Player {
-  constructor({
-    position,
-    click,
-    movingTotem,
-    id,
-    type,
-    cards,
-    isPlaying,
-    timer,
-    drawCard,
-  }) {
+  constructor({position, click, type, skin, drawCard}) {
     this.position = position;
     this.radius = 5;
     this.click = click;
-    this.movingTotem = movingTotem;
-    this.isPlaying = isPlaying;
-    this.id = id;
     this.type = type;
-    this.drawCard = drawCard;
+    this.skin = skin;
+    this.particles = this.initParticle ();
   }
 
-  setPosition (position) {
-    this.position = position;
-  }
-  setDeck (deck) {
-    this.deck = deck;
+  initParticle = () => {
+    let particleArray = [];
+
+    for (let i = 0; i < 10; i++) {
+      let x = 0;
+      let y = 0;
+      let size = 1;
+      let color = 'black';
+      let weigth = 0;
+      particleArray.push (new Particle ({x, y, size, color, weigth}));
+    }
+    return particleArray;
+  };
+
+  connect (context, particles) {
+    let opacity = 1;
+    particles.forEach ((particle, i) => {
+      for (let a = i; a < particles.length; a++) {
+        const distance =
+          particle.x -
+          particles[a].x * particle.x -
+          particles[a].x +
+          (particle.y - particles[a].y * particle.y - particles[a].y);
+        if (distance < 200) {
+          opacity = 1 - distance / 10000;
+          context.strokeStyle = 'rgb(255,255,255' + opacity + ')';
+          context.beginPath ();
+          context.lineWidth = 1;
+          context.moveTo (particle.x, particle.y);
+          context.lineTo (particles[a].x, particles[a].y);
+          context.stroke ();
+        }
+      }
+    });
   }
   animateParticle (context) {
-    context.clearRect (0, 0, 900, 900);
-    this.particleArray.forEach (particle => {
+    console.log ('oklm', this.skin);
+    if (this.skin === 'particle') {
+      this.particles.forEach (particle => {
+        particle.render (context);
+      });
+    }
+    if (this.skin === 'circle') {
+      this.particles.forEach (particle => {
+        particle.renderCircle (context);
+      });
+    }
+    if (this.skin === 'connect') {
+      this.connect (context, this.particles);
+    }
+    this.particles.forEach (particle => {
       particle.update (this.position);
-
-      particle.render (context);
     });
-    console.log ('hihihihihihihihihihihi');
-    requestAnimationFrame (() => this.animateParticle (context));
   }
+
   render (state, context) {
     context.save ();
 
@@ -60,5 +86,6 @@ export default class Player {
     context.fill ();
 
     context.restore ();
+    this.animateParticle (context);
   }
 }

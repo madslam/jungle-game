@@ -39,25 +39,49 @@ CanvasRenderingContext2D.prototype.roundRect = function (
 };
 
 export default class Profile {
-  constructor({position, name, radius, health, isAlive}) {
+  constructor({
+    position,
+    name,
+    radius,
+    health,
+    nextHealth,
+    isAlive,
+    isPlaying,
+  }) {
     this.position = position;
     this.radius = radius;
     this.name = name;
     this.health = health;
+    this.nextHealth = nextHealth;
     this.isAlive = isAlive;
+
+    this.isPlaying = isPlaying;
+    this.weight = 0.01;
+    this.opacity = 1;
   }
 
+  drawName (context) {
+    context.font = '20px Comic Sans MS';
+    context.textAlign = 'center';
+    context.fillStyle = 'white';
+    if (this.isPlaying) {
+      context.globalAlpha = this.opacity;
+
+      if (this.opacity < 0.1 || this.opacity > 1) {
+        this.weight *= -1;
+      }
+      this.opacity = this.opacity - this.weight;
+    }
+    context.fillText (this.name, this.position.x, this.position.y - 40);
+    context.globalAlpha = 1;
+  }
   render (state, context) {
     // Screen edges
     // Delete if it goes out of bounds
-
     context.save ();
     context.translate (this.position.x, this.position.y);
 
-    context.font = '20px Comic Sans MS';
-    context.textAlign = 'center';
     context.fillStyle = 'steelblue';
-    context.fillText (this.name, 0, -40);
 
     context.beginPath ();
     context.strokeStyle = 'steelblue';
@@ -79,5 +103,6 @@ export default class Profile {
     }
     context.roundRect (0, 60, 175, 20, 10, this.health);
     context.restore ();
+    this.drawName (context);
   }
 }

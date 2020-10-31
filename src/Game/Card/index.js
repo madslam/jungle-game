@@ -34,40 +34,42 @@ export default class Card {
   render (state, context) {
     // Screen edges
     // Delete if it goes out of bounds
+    if (this.position) {
+      context.save ();
 
-    context.save ();
+      //context.lineWidth = 1;
 
-    //context.lineWidth = 1;
+      context.font = '20px Comic Sans MS';
+      context.textAlign = 'center';
 
-    context.font = '20px Comic Sans MS';
-    context.textAlign = 'center';
+      context.beginPath ();
+      context.strokeStyle = 'white';
 
-    context.beginPath ();
-    context.strokeStyle = 'white';
+      context.fillStyle = 'black';
 
-    context.fillStyle = 'black';
-    context.translate (this.position.x, this.position.y);
-    context.rotate (this.rotation * Math.PI / 180);
-    context.roundRect2 (0, 0, 100, 100, 10);
+      context.translate (this.position.x, this.position.y);
+      context.rotate (this.rotation * Math.PI / 180);
+      context.roundRect2 (0, 0, 100, 100, 10);
 
-    context.fill ();
-    context.stroke ();
+      context.fill ();
+      context.stroke ();
 
-    context.fillStyle = 'white';
-    if (this.show) {
-      //context.fillText(`${this.value}`, 0, 0);
-      const img = new Image ();
-
-      if (this.value === 1) {
-        img.src = card1;
+      context.fillStyle = 'white';
+      if (this.show) {
+        context.fillText (`${this.value}`, 0, 0);
+        /* const img = new Image ();
+  
+        if (this.value === 1) {
+          img.src = card1;
+        }
+        if (this.value === 2) {
+          img.src = card2;
+        }
+        context.drawImage (img, -50, -50, 100, 100);*/
+      } else {
+        //   context.drawImage (test, -50, -50, 100, 100);
       }
-      if (this.value === 2) {
-        img.src = card2;
-      }
-      context.drawImage (img, -50, -50, 100, 100);
-    } else {
-      //   context.drawImage (test, -50, -50, 100, 100);
+      context.restore ();
     }
-    context.restore ();
   }
 }

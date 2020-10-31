@@ -4,7 +4,6 @@ export default class Goal {
     this.position = position;
     this.radius = 50;
     this.totemIn = totemIn;
-    this.isPlaying = isPlaying;
     this.timer = timer;
   }
   setTotemIn (totemIn) {
@@ -27,15 +26,15 @@ export default class Goal {
       context.fillStyle = '#4ef5d2';
     }
 
-    if (this.isPlaying) {
-      context.beginPath ();
+    context.beginPath ();
 
-      context.lineWidth = 5;
+    context.lineWidth = 3;
 
-      context.strokeStyle = '#f986c8';
-      context.arc (0, 0, 90, this.timer, 2 * Math.PI);
-      context.stroke ();
-    }
+    context.strokeStyle = 'white';
+    context.setLineDash ([13, 13]);
+
+    context.arc (0, 0, 60, 0, 2 * Math.PI);
+    context.stroke ();
 
     context.restore ();
   }

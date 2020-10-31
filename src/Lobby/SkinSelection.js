@@ -2,7 +2,6 @@ import React, {useState, useEffect, useRef, Fragment} from 'react';
 import {Divider, Row, Col} from 'antd';
 
 import Player from '../Game/Player';
-import {initParticle, animateParticle} from '../Game/animation/mouse-particle';
 
 const SkinSelection = ({socket}) => {
   const canvasParticle = useRef (null);
@@ -16,31 +15,26 @@ const SkinSelection = ({socket}) => {
     const contextConnect = canvasConnect.current.getContext ('2d');
     const contextBase = canvasBase.current.getContext ('2d');
     const contextCircle = canvasCircle.current.getContext ('2d');
-
-    const np = new Player ({
+    const basicAnim = new Player ({
       position: {x: 50, y: 50},
     });
-    const particles = initParticle ();
-    const particleAnim = {
-      position: np.position,
-      particles,
+    const particleAnim = new Player ({
+      position: {x: 50, y: 50},
       skin: 'particle',
-    };
-    const connectAnim = {
-      position: np.position,
-      particles,
+    });
+    const connectAnim = new Player ({
+      position: {x: 50, y: 50},
       skin: 'connect',
-    };
-    const circleAnim = {
-      position: np.position,
-      particles,
+    });
+    const circleAnim = new Player ({
+      position: {x: 50, y: 50},
       skin: 'circle',
-    };
-    const playerRef = {current: np};
-    np.render (null, contextBase);
-    animateParticle (contextCircle, [circleAnim], playerRef);
-    animateParticle (contextParticle, [particleAnim], playerRef);
-    animateParticle (contextConnect, [connectAnim], playerRef);
+    });
+
+    basicAnim.render (null, contextBase);
+    particleAnim.render (null, contextParticle);
+    connectAnim.render (null, contextConnect);
+    circleAnim.render (null, contextCircle);
   }, []);
 
   const isSkinSelect = name => name === skin;

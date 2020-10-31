@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import io from 'socket.io-client';
 import {useParams, useHistory} from 'react-router-dom';
 import {message as messageAntd} from 'antd';
+import throttle from 'lodash.throttle';
 
 import Player from './Player';
 import Card from './Card';
@@ -24,17 +25,15 @@ import {drawCircularAnimation} from './animation/circular';
 import modal from './Modal';
 import Lobby from '../Lobby';
 import {GAME_WIDTH, GAME_HEIGHT, updatePosition} from './utils';
-import {initParticle, animateParticle} from './animation/mouse-particle';
 import {initializeParticles} from './animation/light-particle';
 const Game = () => {
-  const mousePlayer = {};
-
   const {id} = useParams ();
   const history = useHistory ();
 
   const socket = useRef (null);
 
   const [game, setGame] = useState (false);
+  const gamu = {animation: {health: false}, players: []};
 
   const canvas = useRef (null);
   const canvasBackground = useRef (null);
@@ -80,20 +79,7 @@ const Game = () => {
     playerRef.current = data;
     _setPlayer (data);
   };
-  const updatePlayers = (context, players) => {
-    const currentPlayer = playerRef.current;
-    context.clearRect (0, 0, state.screen.width, state.screen.height);
 
-    players.forEach (p => {
-      const positionPlayer = updatePosition (currentPlayer, p.position);
-
-      const np = new Player ({
-        ...p,
-        position: positionPlayer,
-      });
-      np.render (state, context);
-    });
-  };
   const updateDrawCard = (context, players) => {
     const currentPlayer = playerRef.current;
     context.clearRect (0, 0, state.screen.width, state.screen.height);
@@ -147,51 +133,6 @@ const Game = () => {
       });
     });
   };
-  const updateObjects = (context, players) => {
-    context.clearRect (0, 0, state.screen.width, state.screen.height);
-    const currentPlayer = playerRef.current;
-
-    players.forEach (p => {
-      const positionGoal = updatePosition (currentPlayer, p.goal.position);
-      const positionProfile = updatePosition (
-        currentPlayer,
-        p.profile.position
-      );
-      const positionBunch = updatePosition (
-        currentPlayer,
-        p.deck.positionBunch
-      );
-
-      const {goal, deck, profile, timer, isPlaying} = p;
-      const newGoal = new Goal ({
-        ...goal,
-        position: positionGoal,
-        timer,
-        isPlaying,
-      });
-
-      const newDeck = new Deck ({
-        ...deck,
-        positionBunch,
-      });
-
-      const newProfile = new Profile ({
-        ...profile,
-        position: positionProfile,
-      });
-      newDeck.render (state, context);
-      newGoal.render (state, context);
-      newProfile.render (state, context);
-
-      p.deck.cards.forEach (c => {
-        let positionCard = updatePosition (currentPlayer, c.position);
-        const card = new Card ({...c, position: positionCard});
-
-        card.render (state, context);
-      });
-    });
-  };
-
   const initGame = () => {
     const context = canvasBackground.current.getContext ('2d');
     const contextTotem = canvasTotemAnimation.current.getContext ('2d');
@@ -218,7 +159,7 @@ const Game = () => {
     });
   };
 
-  const handleMouseMove = useCallback (({clientX, clientY}) => {
+  const handleMouseMove = throttle (({clientX, clientY}) => {
     if (canvas.current) {
       var rect = canvas.current.getBoundingClientRect ();
 
@@ -248,7 +189,7 @@ const Game = () => {
       }
       socket.current.emit ('mouse', position);
     }
-  }, []); //eslint-disable-line
+  }, 40); //eslint-disable-line
 
   const handleMouseDown = useCallback (({clientX, clientY}) => {
     if (canvas.current) {
@@ -327,7 +268,7 @@ const Game = () => {
     if (distance <= 0) {
       setTimeout (() => {
         context.clearRect (0, 0, state.screen.width, state.screen.height);
-      }, 3000);
+      }, 1000);
       return;
     }
     context.clearRect (0, 0, state.screen.width, state.screen.height);
@@ -372,7 +313,7 @@ const Game = () => {
       }
     }
   }
-  function doAnimation2 (time, card, basePosition, players, player) {
+  function doAnimationDrawCard (time, card, basePosition, players, player) {
     if (!canvasAnimation.current) {
       return;
     }
@@ -381,13 +322,19 @@ const Game = () => {
     updateDrawCard (context, playersAnimation);
     if (newTime > 0) {
       requestAnimationFrame (() =>
-        doAnimation2 (newTime, card, basePosition, playersAnimation, player)
+        doAnimationDrawCard (
+          newTime,
+          card,
+          basePosition,
+          playersAnimation,
+          player
+        )
       );
     } else {
       setTimeout (() => {
         context.clearRect (0, 0, state.screen.width, state.screen.height);
       }, 200);
-      socket.current.emit ('animationDone', player);
+      socket.current.emit ('animationDrawCardDone', player);
       const indexAnimation = playersAnimation.reduce ((_, p, index) => {
         if (p.type === player.type) {
           return index;
@@ -404,8 +351,8 @@ const Game = () => {
 
   useLayoutEffect (() => {
     socket.current = id
-      ? io (`localhost:8080/?id=${id}`)
-      : io (`localhost:8080/`);
+      ? io (`http://159.65.115.34/?id=${id}`)
+      : io (`http://159.65.115.34/`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
       messageAntd.error (
@@ -450,27 +397,170 @@ const Game = () => {
         );
       });
     });
-    socket.current.on ('animation2', ({player, position, players}) => {
+
+    function gameLoop () {
+      // Update game objects in the loop
+      /* update();
+      draw();*/
+
+      if (gamu.animation.health) {
+        doAnimationHealth ();
+      }
+      drawPlayers ();
+      window.requestAnimationFrame (gameLoop);
+    }
+
+    socket.current.on ('animationDrawCard', ({player, position, players}) => {
       const pl = players.find (p => p.id === player.id);
       playersAnimation.push (pl);
 
       requestAnimationFrame (() =>
-        doAnimation2 (0, pl.drawCard, position, players, pl)
+        doAnimationDrawCard (0, pl.drawCard, position, players, pl)
       );
     });
 
+    socket.current.on ('animationHealth', ({players}) => {
+      updateProfile (players);
+      gamu.animation.health = true;
+    });
+
+    const updateProfile = players => {
+      const currentPlayer = playerRef.current;
+
+      players.forEach ((p, index) => {
+        const positionProfile = updatePosition (
+          currentPlayer,
+          p.profile.position
+        );
+
+        const {profile, isPlaying} = p;
+
+        const newProfile = new Profile ({
+          ...profile,
+          position: positionProfile,
+          isPlaying,
+        });
+        gamu.players[index].profile = newProfile;
+      });
+    };
+
+    const updateCards = players => {
+      const currentPlayer = playerRef.current;
+
+      players.forEach ((p, index) => {
+        const cards = p.deck.cards.map (c => {
+          let positionCard = updatePosition (currentPlayer, c.position);
+          return new Card ({...c, position: positionCard});
+        });
+        gamu.players[index].cards = cards;
+      });
+    };
+    const updatePlayers = players => {
+      const currentPlayer = playerRef.current;
+
+      players.forEach ((p, index) => {
+        const positionPlayer = updatePosition (currentPlayer, p.position);
+
+        gamu.players[index].player.position = positionPlayer;
+      });
+    };
+
+    const initPlayers = players => {
+      const currentPlayer = playerRef.current;
+
+      delete gamu.players;
+      gamu.players = [];
+      players.forEach (p => {
+        const positionGoal = updatePosition (currentPlayer, p.goal.position);
+        const positionProfile = updatePosition (
+          currentPlayer,
+          p.profile.position
+        );
+        const positionBunch = updatePosition (
+          currentPlayer,
+          p.deck.positionBunch
+        );
+        const positionPlayer = updatePosition (currentPlayer, p.position);
+
+        const {goal, deck, profile, timer, isPlaying} = p;
+        const newGoal = new Goal ({
+          ...goal,
+          position: positionGoal,
+          timer,
+        });
+
+        const newDeck = new Deck ({
+          ...deck,
+          positionBunch,
+        });
+
+        const newProfile = new Profile ({
+          ...profile,
+          position: positionProfile,
+          isPlaying,
+        });
+
+        const newPlayer = new Player ({...p, position: positionPlayer});
+        const cards = p.deck.cards.map (c => {
+          let positionCard = updatePosition (currentPlayer, c.position);
+          return new Card ({...c, position: positionCard});
+        });
+
+        gamu.players.push ({
+          goal: newGoal,
+          deck: newDeck,
+          profile: newProfile,
+          player: newPlayer,
+          cards,
+        });
+      });
+    };
+
+    const drawPlayers = () => {
+      if (!canvas.current) {
+        return;
+      }
+      const context = canvas.current.getContext ('2d');
+      context.clearRect (0, 0, state.screen.width, state.screen.height);
+
+      gamu.players.forEach (p => {
+        const {goal, profile, cards, player} = p;
+
+        goal.render (state, context);
+        profile.render (state, context);
+        cards.forEach (c => c.render (state, context));
+        player.render (state, context);
+      });
+    };
+    const doAnimationHealth = () => {
+      const finish = gamu.players.every (p => {
+        if (
+          p.profile.health === p.profile.nextHealth ||
+          p.profile.nextHealth === null
+        ) {
+          return true;
+        }
+        const diff = p.profile.health - p.profile.nextHealth;
+        if (diff > 0) {
+          p.profile.health = p.profile.health - 0.5;
+        } else {
+          p.profile.health = p.profile.health + 0.5;
+        }
+        return false;
+      });
+      if (finish) {
+        gamu.animation.health = false;
+      }
+    };
     socket.current.on ('gameStart', game => {
       setGame (game);
       const {totem, players} = game;
-      players.forEach (p => {
-        const particles = initParticle ();
-        mousePlayer[p.type] = {position: p.position, particles, skin: p.skin};
-      });
-      const context = canvasMouseAnimation.current.getContext ('2d');
 
-      animateParticle (context, mousePlayer, playerRef);
       setTotem (totem);
       initGame ();
+
+      initPlayers (players);
+
       socket.current.on ('message', ({message}) => {
         drawMessage (message, 2);
       });
@@ -478,8 +568,16 @@ const Game = () => {
         if (!game) {
           return;
         }
-        const {players, totem, goal, deck, bunchCards, card} = gameUpdate;
-        if (card) {
+        const {
+          players,
+          totem,
+          profile,
+          cards,
+          bunchCards,
+          drawCard,
+          playersMove,
+        } = gameUpdate;
+        if (drawCard) {
           const context = canvasCard.current.getContext ('2d');
           requestAnimationFrame (() => updateDrawCard (context, players));
         }
@@ -488,16 +586,16 @@ const Game = () => {
           requestAnimationFrame (() => updateBunchCards (context, players));
         }
 
-        if (goal || deck) {
-          const context = canvas.current.getContext ('2d');
-          requestAnimationFrame (() => updateObjects (context, players));
+        if (profile) {
+          updateProfile (players);
+          console.log ('on update');
         }
-        if (players) {
-          players.forEach (p => {
-            mousePlayer[p.type].position = p.position;
-          });
-          const contextPlayers = canvasPlayers.current.getContext ('2d');
-          requestAnimationFrame (() => updatePlayers (contextPlayers, players));
+        if (cards) {
+          updateCards (players);
+          console.log ('on update les caaaarte');
+        }
+        if (playersMove) {
+          updatePlayers (players);
         }
         if (totem) {
           const context = canvasTotem.current.getContext ('2d');
@@ -550,6 +648,7 @@ const Game = () => {
       window.addEventListener ('mousedown', handleMouseDown);
       window.addEventListener ('mouseup', handleMouseUp);
       window.addEventListener ('click', handleMouseClick);
+      gameLoop ();
     });
   }, []); //eslint-disable-line
   useEffect (

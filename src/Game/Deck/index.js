@@ -7,15 +7,7 @@ export default class Deck {
     this.positionBunch = positionBunch;
     this.radius = 90;
   }
-  setBunchCards (bunchCards) {
-    this.bunchCards = bunchCards;
-  }
-  setpositionBunch (positionBunch) {
-    this.positionBunch = positionBunch;
-  }
-  setCardPlayed (cardPlayed) {
-    this.cardPlayed = cardPlayed;
-  }
+
   render (state, context) {
     // Screen edges
     // Delete if it goes out of bounds
