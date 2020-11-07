@@ -61,19 +61,27 @@ export default class Profile {
   }
 
   drawName (context) {
+    context.save ();
     context.font = '20px Comic Sans MS';
     context.textAlign = 'center';
     context.fillStyle = 'white';
     if (this.isPlaying) {
-      context.globalAlpha = this.opacity;
+      context.font = '24px Comic Sans MS';
+      /* context.globalAlpha = this.opacity;
 
       if (this.opacity < 0.1 || this.opacity > 1) {
         this.weight *= -1;
       }
-      this.opacity = this.opacity - this.weight;
+      this.opacity = this.opacity - this.weight;*/
+      context.shadowColor = '#5cbde8';
+      context.shadowBlur = 20;
+      context.shadowOffsetX = 0;
+      context.shadowOffsetY = 0;
     }
+
     context.fillText (this.name, this.position.x, this.position.y - 40);
     context.globalAlpha = 1;
+    context.restore ();
   }
   render (state, context) {
     // Screen edges

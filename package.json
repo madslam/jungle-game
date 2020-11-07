@@ -29,6 +29,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts --max_old_space_size=4096 build",
+    "deploy-production": "react-scripts build && scp -r ./build/* root@165.22.206.242:/var/www/junglespeed.ml/html",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -30,11 +30,19 @@ const SkinSelection = ({socket}) => {
       position: {x: 50, y: 50},
       skin: 'circle',
     });
+    const gameLoop = () => {
+      contextBase.clearRect (0, 0, 100, 100);
+      contextParticle.clearRect (0, 0, 100, 100);
+      contextConnect.clearRect (0, 0, 100, 100);
+      contextCircle.clearRect (0, 0, 100, 100);
 
-    basicAnim.render (null, contextBase);
-    particleAnim.render (null, contextParticle);
-    connectAnim.render (null, contextConnect);
-    circleAnim.render (null, contextCircle);
+      basicAnim.render (null, contextBase);
+      particleAnim.render (null, contextParticle);
+      connectAnim.render (null, contextConnect);
+      circleAnim.render (null, contextCircle);
+      window.requestAnimationFrame (gameLoop);
+    };
+    gameLoop ();
   }, []);
 
   const isSkinSelect = name => name === skin;
@@ -46,7 +54,7 @@ const SkinSelection = ({socket}) => {
   };
   return (
     <Fragment>
-      <Divider orientation="left">Choose your skin</Divider>
+      <Divider orientation="left"><h3>Choose your skin</h3></Divider>
 
       <Row gutter={[32, 32]} justify="center">
         <Col>

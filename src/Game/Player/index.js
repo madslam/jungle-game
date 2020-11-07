@@ -2,13 +2,17 @@ import {GAME_WIDTH, GAME_HEIGHT} from '../utils';
 import Particle from '../Particle';
 
 export default class Player {
-  constructor({position, click, type, skin, drawCard}) {
+  constructor({position, click, type, skin, id}) {
+    this.id = id;
     this.position = position;
-    this.radius = 5;
+    this.radius = 30;
     this.click = click;
     this.type = type;
     this.skin = skin;
     this.particles = this.initParticle ();
+    this.circ = 4 * (Math.sqrt (2) - 1) / 3;
+    this.c = this.circ;
+    this.count = Math.PI;
   }
 
   initParticle = () => {
@@ -47,7 +51,6 @@ export default class Player {
     });
   }
   animateParticle (context) {
-    console.log ('oklm', this.skin);
     if (this.skin === 'particle') {
       this.particles.forEach (particle => {
         particle.render (context);
@@ -71,10 +74,12 @@ export default class Player {
 
     context.translate (this.position.x, this.position.y);
 
-    context.fillStyle = '#4ab7dd';
+    context.strokeStyle = '#4ab7dd';
     context.lineWidth = 2;
     context.beginPath ();
-    context.arc (0, 0, 10, 0, 2 * Math.PI);
+    //context.arc (0, 0, 10, 0, 2 * Math.PI);
+    context.fillStyle = '#4ab7dd';
+
     context.font = '20px Comic Sans MS';
     if (this.click) {
       context.fillStyle = 'red';
@@ -83,9 +88,70 @@ export default class Player {
     if (this.type) {
       context.fillText (this.type, 0, 50);
     }
-    context.fill ();
+    context.stroke ();
+    this.drawBezierCircle (0, 0, this.radius, context);
 
     context.restore ();
     this.animateParticle (context);
+  }
+
+  drawBezierCircle (cx, cy, r, context) {
+    console.log ('coucou');
+    var offsetX = 5 * Math.sin (this.count);
+    var offsetY = 5 * Math.cos (this.count * 2);
+    r = r / 2;
+
+    this.count += 0.01;
+
+    context.translate (cx, cy); // translate to centerpoint
+
+    context.beginPath ();
+
+    // top right
+    this.c = this.circ + 0.2 * Math.sin (this.count);
+    context.moveTo (offsetX + 0, offsetY + -r);
+    context.bezierCurveTo (
+      offsetX + this.c * r,
+      offsetY + -r,
+      offsetX + r,
+      offsetY + -this.c * r,
+      offsetX + r,
+      offsetY + 0
+    );
+
+    // bottom right
+    this.c = this.circ + 0.2 * Math.cos (this.count);
+    context.bezierCurveTo (
+      offsetX + r,
+      offsetY + this.c * r,
+      offsetX + this.c * r,
+      offsetY + r,
+      offsetX + 0,
+      offsetY + r
+    );
+
+    // bottom left
+    this.c = this.circ + 0.2 * Math.sin (this.count * 2);
+    context.bezierCurveTo (
+      offsetX + -this.c * r,
+      offsetY + r,
+      offsetX + -r,
+      offsetY + this.c * r,
+      offsetX + -r,
+      offsetY + 0
+    );
+
+    // top left
+    this.c = this.circ + 0.2 * Math.cos (this.count + 1);
+    context.bezierCurveTo (
+      offsetX + -r,
+      offsetY + -this.c * r,
+      offsetX + -this.c * r,
+      offsetY + -r,
+      offsetX + 0,
+      offsetY + -r
+    );
+
+    context.stroke ();
   }
 }

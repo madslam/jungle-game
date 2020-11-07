@@ -83,7 +83,6 @@ const CreateRoomModal = () => {
                 return errors;
               }}
               onSubmit={async (values, {setSubmitting}) => {
-                console.log ('on est laaa');
                 const {name, numberPlayer} = values;
                 const room = await db.collection ('rooms').add ({
                   name,

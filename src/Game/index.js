@@ -13,7 +13,7 @@ import {message as messageAntd} from 'antd';
 import throttle from 'lodash.throttle';
 
 import Player from './Player';
-import Card from './Card';
+import Card, {loadImages} from './Card';
 import Totem from './Totem';
 import Goal from './Goal';
 import Deck from './Deck';
@@ -33,7 +33,9 @@ const Game = () => {
   const socket = useRef (null);
 
   const [game, setGame] = useState (false);
-  const gamu = {animation: {health: false}, players: []};
+  const [playerPlay, setPlayerPlay] = useState (false);
+
+  const gamu = {animation: {health: false, drawCard: false}, players: []};
 
   const canvas = useRef (null);
   const canvasBackground = useRef (null);
@@ -80,26 +82,6 @@ const Game = () => {
     _setPlayer (data);
   };
 
-  const updateDrawCard = (context, players) => {
-    const currentPlayer = playerRef.current;
-    context.clearRect (0, 0, state.screen.width, state.screen.height);
-
-    players.forEach (p => {
-      const positionDrawCard = p.drawCard.position;
-      if (positionDrawCard) {
-        const positionDrawCard = updatePosition (
-          currentPlayer,
-          p.drawCard.position
-        );
-        const card = new Card ({
-          ...p.drawCard,
-          position: positionDrawCard,
-        });
-
-        card.render (state, context);
-      }
-    });
-  };
 
   const updateTotem = (context, totem) => {
     const currentPlayer = playerRef.current;
@@ -128,6 +110,7 @@ const Game = () => {
         const newCard = new Card ({
           ...card,
           position,
+          skinCard: p.skinCard,
         });
         newCard.render (state, context);
       });
@@ -144,6 +127,10 @@ const Game = () => {
       state.screen.heightUser
     );
 
+    const images = loadImages ();
+
+    console.log (images);
+
     drawMessage ('It Begin ', 2);
   };
   const drawMessage = (message, time) => {
@@ -159,13 +146,23 @@ const Game = () => {
     });
   };
 
+  const scaleMouse = ({clientX, clientY}) => {
+    const context = canvas.current.getContext ('2d');
+
+    const mouseX = clientX - context.canvas.offsetLeft;
+    const mouseY = clientY - context.canvas.offsetTop;
+    const x = mouseX * context.canvas.width / context.canvas.clientWidth;
+    const y = mouseY * context.canvas.height / context.canvas.clientHeight;
+
+    return {x, y};
+  };
+
   const handleMouseMove = throttle (({clientX, clientY}) => {
     if (canvas.current) {
-      var rect = canvas.current.getBoundingClientRect ();
-
+      const {x, y} = scaleMouse ({clientX, clientY});
       let position = {
-        x: clientX - rect.left,
-        y: clientY - rect.top,
+        x,
+        y,
       };
 
       if (playerRef.current.type === 2) {
@@ -189,15 +186,14 @@ const Game = () => {
       }
       socket.current.emit ('mouse', position);
     }
-  }, 40); //eslint-disable-line
+  }, 30); //eslint-disable-line
 
   const handleMouseDown = useCallback (({clientX, clientY}) => {
     if (canvas.current) {
-      var rect = canvas.current.getBoundingClientRect ();
-
+      const {x, y} = scaleMouse ({clientX, clientY});
       let position = {
-        x: clientX - rect.left,
-        y: clientY - rect.top,
+        x,
+        y,
       };
       if (playerRef.current.type === 2) {
         position = {
@@ -221,44 +217,17 @@ const Game = () => {
     }
   });
   const handleMouseUp = useCallback (() => {
-    setClick (false);
     socket.current.emit ('mouseUp');
   });
-  const handleMouseClick = useCallback (({clientX, clientY}) => {
-    var rect = canvas.current.getBoundingClientRect ();
-
-    let position = {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    };
-    if (playerRef.current.type === 2) {
-      position = {
-        x: state.screen.width - clientX + rect.left,
-        y: state.screen.height - clientY + rect.top,
-      };
-    }
-    if (playerRef.current.type === 3) {
-      position = {
-        x: state.screen.height - clientY + rect.top,
-        y: state.screen.width - clientX + rect.left,
-      };
-    }
-    if (playerRef.current.type === 4) {
-      position = {
-        x: clientY - rect.top,
-        y: clientX - rect.left,
-      };
-    }
-    socket.current.emit ('mouseClick', position);
-  }, []); //eslint-disable-line
-
   const handleResize = (value, e) => {
-    /* setState ({
-        screen: {
-          ratio: window.devicePixelRatio || 1,
-        },
-      });*/
+    const context = canvasBackground.current.getContext ('2d');
+    initializeParticles (
+      context,
+      state.screen.widthUser,
+      state.screen.heightUser
+    );
   };
+
   async function doAnimationLooser (players, cardsLooser, distance) {
     if (!canvasScoreLooser.current) {
       return;
@@ -313,46 +282,42 @@ const Game = () => {
       }
     }
   }
-  function doAnimationDrawCard (time, card, basePosition, players, player) {
+  function doAnimationDrawCard () {
     if (!canvasAnimation.current) {
       return;
     }
-    const context = canvasAnimation.current.getContext ('2d');
-    const newTime = objectReturn (time, card, basePosition);
-    updateDrawCard (context, playersAnimation);
-    if (newTime > 0) {
-      requestAnimationFrame (() =>
-        doAnimationDrawCard (
-          newTime,
-          card,
-          basePosition,
-          playersAnimation,
-          player
-        )
-      );
-    } else {
-      setTimeout (() => {
-        context.clearRect (0, 0, state.screen.width, state.screen.height);
-      }, 200);
-      socket.current.emit ('animationDrawCardDone', player);
-      const indexAnimation = playersAnimation.reduce ((_, p, index) => {
-        if (p.type === player.type) {
-          return index;
-        }
-      }, null);
-      playersAnimation.splice (indexAnimation, 1);
+  let isFinish=true
+     gamu.players.forEach (p => {
+       if (p.drawCard?.animation) {
+         isFinish= false;
+         const newTime = objectReturn(
+           p.drawCard.time,
+           p.drawCard,
+           p.drawCard.nextPosition
+         );
 
-      /* setTimeout (
-        () => context.clearRect (0, 0, state.screen.width, state.screen.height),
-        1000
-      );*/
+         if (newTime <= 0) {
+           p.drawCard.animation = false;
+           socket.current.emit('animationDrawCardDone', p.player);
+
+         }
+         p.drawCard.time = newTime;
+         if (p.drawCard.flip) {
+           p.drawCard.flipAnimation()
+         }
+       }
+    });
+    if (isFinish) {
+      console.log("c'est fini :/")
+      gamu.animation.drawCard = false;
     }
+   
   }
 
   useLayoutEffect (() => {
     socket.current = id
-      ? io (`http://159.65.115.34/?id=${id}`)
-      : io (`http://159.65.115.34/`);
+      ? io (`localhost:8080/?id=${id}`)
+      : io (`localhost:8080/`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
       messageAntd.error (
@@ -406,24 +371,64 @@ const Game = () => {
       if (gamu.animation.health) {
         doAnimationHealth ();
       }
+      if (gamu.animation.drawCard) {
+        doAnimationDrawCard ();
+      }
       drawPlayers ();
       window.requestAnimationFrame (gameLoop);
     }
 
-    socket.current.on ('animationDrawCard', ({player, position, players}) => {
-      const pl = players.find (p => p.id === player.id);
-      playersAnimation.push (pl);
-
-      requestAnimationFrame (() =>
-        doAnimationDrawCard (0, pl.drawCard, position, players, pl)
+    socket.current.on ('animationDrawCard', ({player, position}) => {
+      const currentPlayer = playerRef.current;
+      const playerGame = gamu.players.find (p => p.player.id === player.id);
+      const positionNextDrawCard=    updatePosition (
+        currentPlayer,
+        position
       );
+      playerGame.drawCard.nextPosition = positionNextDrawCard;
+      playerGame.drawCard.animation = true;
+      console.log("on est laaaa", player)
+
+      if (player.drawCard.moveTo === "bunch") {
+        console.log("on bunch")
+        playerGame.drawCard.flip=true
+      }
+      gamu.animation.drawCard = true;
+
+      /*requestAnimationFrame (() =>
+        doAnimationDrawCard (0, pl.drawCard, position, players, pl)
+      );*/
     });
 
     socket.current.on ('animationHealth', ({players}) => {
       updateProfile (players);
       gamu.animation.health = true;
     });
+    const updateDraw = playerDrawCard => {
+      const currentPlayer = playerRef.current;
 
+      const playerGame = gamu.players.find (p => p.player.id === playerDrawCard.id);
+      const positionDrawCard = playerDrawCard.drawCard.position;
+ 
+        if (positionDrawCard) {
+          const positionDrawCard = updatePosition (
+            currentPlayer,
+            playerDrawCard.drawCard.position
+          );
+          const drawCard = new Card ({
+            ...playerDrawCard.drawCard,
+            skinCard: playerDrawCard.skinCard,
+            position:positionDrawCard
+          });
+
+          playerGame.drawCard = drawCard;
+
+        } else {
+          playerGame.drawCard = null;
+      }
+          
+    };
+    
     const updateProfile = players => {
       const currentPlayer = playerRef.current;
 
@@ -443,6 +448,12 @@ const Game = () => {
         gamu.players[index].profile = newProfile;
       });
     };
+    const updateRound = players => {
+      players.forEach ((p, index) => {
+        const { isPlaying} = p;
+        gamu.players[index].profile.isPlaying = isPlaying;
+      });
+    };
 
     const updateCards = players => {
       const currentPlayer = playerRef.current;
@@ -450,7 +461,11 @@ const Game = () => {
       players.forEach ((p, index) => {
         const cards = p.deck.cards.map (c => {
           let positionCard = updatePosition (currentPlayer, c.position);
-          return new Card ({...c, position: positionCard});
+          return new Card ({
+            ...c,
+            position: positionCard,
+            skinCard: p.skinCard,
+          });
         });
         gamu.players[index].cards = cards;
       });
@@ -503,16 +518,21 @@ const Game = () => {
         const newPlayer = new Player ({...p, position: positionPlayer});
         const cards = p.deck.cards.map (c => {
           let positionCard = updatePosition (currentPlayer, c.position);
-          return new Card ({...c, position: positionCard});
+          return new Card ({
+            ...c,
+            position: positionCard,
+            skinCard: p.skinCard,
+          });
         });
-
-        gamu.players.push ({
+        const player = {
           goal: newGoal,
           deck: newDeck,
           profile: newProfile,
           player: newPlayer,
           cards,
-        });
+        };
+
+        gamu.players.push (player);
       });
     };
 
@@ -524,11 +544,14 @@ const Game = () => {
       context.clearRect (0, 0, state.screen.width, state.screen.height);
 
       gamu.players.forEach (p => {
-        const {goal, profile, cards, player} = p;
+        const {goal, profile, cards, player, drawCard} = p;
 
         goal.render (state, context);
         profile.render (state, context);
         cards.forEach (c => c.render (state, context));
+        if (drawCard) {
+          drawCard.render (state, context);
+        }
         player.render (state, context);
       });
     };
@@ -554,8 +577,9 @@ const Game = () => {
     };
     socket.current.on ('gameStart', game => {
       setGame (game);
-      const {totem, players} = game;
+      const {totem, players, playerPlay} = game;
 
+      setPlayerPlay (playerPlay);
       setTotem (totem);
       initGame ();
 
@@ -574,25 +598,31 @@ const Game = () => {
           profile,
           cards,
           bunchCards,
-          drawCard,
+          playerDrawCard,
           playersMove,
+          playerPlay,
+          nextRound,
         } = gameUpdate;
-        if (drawCard) {
-          const context = canvasCard.current.getContext ('2d');
-          requestAnimationFrame (() => updateDrawCard (context, players));
+
+        if (playerPlay) {
+          setPlayerPlay (playerPlay);
         }
         if (bunchCards) {
           const context = canvasBunchCards.current.getContext ('2d');
           requestAnimationFrame (() => updateBunchCards (context, players));
         }
 
+        if (playerDrawCard) {
+          updateDraw (playerDrawCard);
+        }
         if (profile) {
           updateProfile (players);
-          console.log ('on update');
+        }
+        if (nextRound) {
+          updateRound (nextRound);
         }
         if (cards) {
           updateCards (players);
-          console.log ('on update les caaaarte');
         }
         if (playersMove) {
           updatePlayers (players);
@@ -603,7 +633,6 @@ const Game = () => {
         }
       });
       socket.current.on ('gameEgality', () => {
-        console.log ('il y a égalité');
         drawMessage ('Egality !', 2);
         setTimeout (
           () =>
@@ -634,20 +663,16 @@ const Game = () => {
         window.removeEventListener ('mousemove', handleMouseMove);
         window.removeEventListener ('mousedown', handleMouseDown);
         window.removeEventListener ('mouseup', handleMouseUp);
-        window.removeEventListener ('click', handleMouseClick);
-        console.log ('on deleteee', game);
         setGame (game);
         setPlayer (null);
       });
       socket.current.on ('redirect', () => {
-        socket.current.disconnect ();
         history.push (`/rooms`);
       });
       window.addEventListener ('resize', handleResize);
       window.addEventListener ('mousemove', handleMouseMove);
       window.addEventListener ('mousedown', handleMouseDown);
       window.addEventListener ('mouseup', handleMouseUp);
-      window.addEventListener ('click', handleMouseClick);
       gameLoop ();
     });
   }, []); //eslint-disable-line
@@ -657,10 +682,8 @@ const Game = () => {
       window.removeEventListener ('mousemove', handleMouseMove);
       window.removeEventListener ('mousedown', handleMouseDown);
       window.removeEventListener ('mouseup', handleMouseUp);
-      window.removeEventListener ('click', handleMouseClick);
-      socket.current.emit ('disco');
-      socket.current.disconnect ();
 
+      socket.current.emit ('disco');
       setGame (false);
 
       socket.current.disconnect ();
@@ -684,6 +707,9 @@ const Game = () => {
           height={state.screen.heightUser}
           ref={canvasBackground}
         />
+        <span className="score current-score">
+          Round : {playerPlay && 'Player ' + playerPlay.type}
+        </span>
         <div id="game">
           <canvas
             id="ui-looser"

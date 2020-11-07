@@ -8,7 +8,6 @@ const center = styled.div`
 text-align: center
 `;
 const Load = ({game, message}) => {
-  console.log (game);
   if (game) {
     return (
       <center>

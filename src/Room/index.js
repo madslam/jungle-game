@@ -18,7 +18,6 @@ const Room = () => {
     const roomsDB = await db.collection ('rooms').get ();
     const newRooms = [];
     roomsDB.forEach (doc => newRooms.push ({...doc.data (), id: doc.id}));
-    console.log ('rooo', newRooms);
     setRooms (newRooms);
     setLoading (false);
   };
@@ -45,30 +44,36 @@ const Room = () => {
 
   return (
     <Layout className="center">
-      <Row gutter={[16, 16]} justify="center">
-        <Col>
-          <Button type="primary" onClick={getRooms}>Refresh room</Button>
-        </Col>
-        <Col>
-          <CreateRoomModal />
-        </Col>
-        <Col>
-          <Button type="primary" onClick={joinRandomRoom}>
-            join random room
-          </Button>
-        </Col>
-        <Col />
-      </Row>
+      <div className="centerContent">
+        <Row gutter={[16, 16]} justify="center">
+          <Col>
+            <Button type="primary" onClick={getRooms}>Refresh room</Button>
+          </Col>
+          <Col>
+            <CreateRoomModal />
+          </Col>
+          <Col>
+            <Button type="primary" onClick={joinRandomRoom}>
+              join random room
+            </Button>
+          </Col>
+          <Col />
+        </Row>
 
-      <Row className="login-buttons" gutter={24} justify="center">
-        <button className="login-provider-button" onClick={signInWithGoogle}>
-          <img
-            src="https://img.icons8.com/ios-filled/50/000000/google-logo.png"
-            alt="google icon"
-          />
-          <span> Continue with Google</span>
-        </button>
-      </Row>
+        <Row gutter={24} justify="center">
+          <Button
+            className="buttonGoogle"
+            type="primary"
+            onClick={signInWithGoogle}
+          >
+            <img
+              src={process.env.PUBLIC_URL + `/img/GoogleLOGO.png`}
+              alt="google icon"
+            />
+            <span> Continue with Google</span>
+          </Button>
+        </Row>
+      </div>
 
     </Layout>
   );
