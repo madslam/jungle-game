@@ -28,7 +28,7 @@ code {
   background-color: black !important;
   padding: 0;
   margin: auto;
-  display: block;
+  display: flex;
   height: 97%;
   position: absolute;
   top: 0;

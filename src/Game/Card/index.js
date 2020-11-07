@@ -30,14 +30,7 @@ export function loadImages () {
   const loadtotal = 10;
   let preloaded = false;
   // Load the images
-  var loadedimages = [];
-  var image = new Image ();
-
-  // Set the source url of the image
-  image.src = process.env.PUBLIC_URL + `/img/front-cards/pokemon.png`;
-
-  // Save to the image array
-  loadedimages[i] = image;
+  var loadedimages = {};
 
   for (var i = 1; i < 10; i++) {
     // Create the image object
@@ -57,20 +50,21 @@ export function loadImages () {
     image.src = process.env.PUBLIC_URL + `/img/card-${i}.png`;
 
     // Save to the image array
-    loadedimages[i] = image;
+    loadedimages['card-' + i] = image;
   }
 
   // Return an array of images
   return loadedimages;
 }
 export default class Card {
-  constructor({position, move, value, show, rotation, skinCard}) {
+  constructor({position, move, value, show, rotation, skinCard, image}) {
     this.position = position;
     this.move = move;
     this.show = show;
     this.radius = 80;
     this.intervalId = () => null;
     this.value = value;
+    this.image = image;
     this.rotation = rotation;
     this.skinCard = skinCard;
     this.translation = 4;
@@ -84,10 +78,8 @@ export default class Card {
       this.show = !this.show;
       this.height = 1;
       this.translation = this.translation * -1;
-      console.log ('on resoip');
     }
     const newHeight = this.height - this.translation;
-    console.log ('lol', this.translation, newHeight);
     if (newHeight > 100) {
       this.height = 100;
       this.translation = this.translation * -1;
@@ -121,12 +113,15 @@ export default class Card {
 
       context.fillStyle = 'white';
       if (this.show) {
-        //  context.fillText (`${this.value}`, 0, 0);
-        const img = new Image ();
+        // context.fillText (`${this.value}`, 0, 0);
 
-        img.src = process.env.PUBLIC_URL + `/img/card-${this.value}.png`;
-
-        context.drawImage (img, -50, 0 - this.height / 2, 100, this.height);
+        context.drawImage (
+          this.image,
+          -50,
+          0 - this.height / 2,
+          100,
+          this.height
+        );
       } else {
         if (this.skinCard) {
           const img = new Image ();

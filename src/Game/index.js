@@ -29,6 +29,7 @@ import {initializeParticles} from './animation/light-particle';
 const Game = () => {
   const {id} = useParams ();
   const history = useHistory ();
+  const images = loadImages ();
 
   const socket = useRef (null);
 
@@ -83,23 +84,14 @@ const Game = () => {
   };
 
 
-  const updateTotem = (context, totem) => {
-    const currentPlayer = playerRef.current;
-    context.clearRect (0, 0, state.screen.width, state.screen.height);
-    const totemPosition = updatePosition (currentPlayer, totem.position);
-    const newTotem = new Totem ({
-      position: totemPosition,
-      playerMove: totem.playerMove,
-      radius: totem.radius,
-    });
-    newTotem.render (state, context);
-  };
+
 
   const updateBunchCards = (context, players) => {
     context.clearRect (0, 0, state.screen.width, state.screen.height);
     const currentPlayer = playerRef.current;
     players.forEach (p => {
       let bunchCards = p.deck.bunchCards;
+      console.log("le bunch", bunchCards)
       if (bunchCards.length > 4) {
         const reversed = bunchCards.reverse ();
         const newBunchCard = reversed.slice (0, 6);
@@ -110,6 +102,7 @@ const Game = () => {
         const newCard = new Card ({
           ...card,
           position,
+          image:images['card-'+card.value],
           skinCard: p.skinCard,
         });
         newCard.render (state, context);
@@ -127,9 +120,7 @@ const Game = () => {
       state.screen.heightUser
     );
 
-    const images = loadImages ();
 
-    console.log (images);
 
     drawMessage ('It Begin ', 2);
   };
@@ -237,7 +228,7 @@ const Game = () => {
     if (distance <= 0) {
       setTimeout (() => {
         context.clearRect (0, 0, state.screen.width, state.screen.height);
-      }, 1000);
+      }, 200);
       return;
     }
     context.clearRect (0, 0, state.screen.width, state.screen.height);
@@ -286,7 +277,9 @@ const Game = () => {
     if (!canvasAnimation.current) {
       return;
     }
-  let isFinish=true
+    let isFinish = true
+    console.log ('on commence l animation');
+
      gamu.players.forEach (p => {
        if (p.drawCard?.animation) {
          isFinish= false;
@@ -297,18 +290,19 @@ const Game = () => {
          );
 
          if (newTime <= 0) {
+          console.log ('une anim de fini');
            p.drawCard.animation = false;
            socket.current.emit('animationDrawCardDone', p.player);
 
          }
          p.drawCard.time = newTime;
          if (p.drawCard.flip) {
-           p.drawCard.flipAnimation()
+          p.drawCard.flipAnimation()
          }
        }
     });
     if (isFinish) {
-      console.log("c'est fini :/")
+      console.log ('on fini lanimation');
       gamu.animation.drawCard = false;
     }
    
@@ -316,8 +310,8 @@ const Game = () => {
 
   useLayoutEffect (() => {
     socket.current = id
-      ? io (`localhost:8080/?id=${id}`)
-      : io (`localhost:8080/`);
+      ? io (`159.65.115.34/?id=${id}`)
+      : io (`159.65.115.34/`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
       messageAntd.error (
@@ -387,10 +381,8 @@ const Game = () => {
       );
       playerGame.drawCard.nextPosition = positionNextDrawCard;
       playerGame.drawCard.animation = true;
-      console.log("on est laaaa", player)
 
       if (player.drawCard.moveTo === "bunch") {
-        console.log("on bunch")
         playerGame.drawCard.flip=true
       }
       gamu.animation.drawCard = true;
@@ -404,7 +396,16 @@ const Game = () => {
       updateProfile (players);
       gamu.animation.health = true;
     });
-    const updateDraw = playerDrawCard => {
+
+
+    const updateTotem = ( totem) => {
+      const currentPlayer = playerRef.current;
+      const totemPosition = updatePosition (currentPlayer, totem.position);
+      gamu.totem.position=totemPosition
+    };
+
+    
+    const updateDrawCard = playerDrawCard => {
       const currentPlayer = playerRef.current;
 
       const playerGame = gamu.players.find (p => p.player.id === playerDrawCard.id);
@@ -418,6 +419,7 @@ const Game = () => {
           const drawCard = new Card ({
             ...playerDrawCard.drawCard,
             skinCard: playerDrawCard.skinCard,
+            image:images['card-'+playerDrawCard.drawCard.value],
             position:positionDrawCard
           });
 
@@ -463,6 +465,7 @@ const Game = () => {
           let positionCard = updatePosition (currentPlayer, c.position);
           return new Card ({
             ...c,
+            image:images['card-'+c.value],
             position: positionCard,
             skinCard: p.skinCard,
           });
@@ -480,10 +483,15 @@ const Game = () => {
       });
     };
 
-    const initPlayers = players => {
+    const initPlayers = ({players,totem}) => {
       const currentPlayer = playerRef.current;
 
       delete gamu.players;
+
+      const newTotem = new Totem ({
+        ...totem,
+      });
+      gamu.totem=newTotem
       gamu.players = [];
       players.forEach (p => {
         const positionGoal = updatePosition (currentPlayer, p.goal.position);
@@ -520,6 +528,7 @@ const Game = () => {
           let positionCard = updatePosition (currentPlayer, c.position);
           return new Card ({
             ...c,
+            image:images['card-'+c.value],
             position: positionCard,
             skinCard: p.skinCard,
           });
@@ -543,6 +552,7 @@ const Game = () => {
       const context = canvas.current.getContext ('2d');
       context.clearRect (0, 0, state.screen.width, state.screen.height);
 
+      gamu.totem.render (state, context);
       gamu.players.forEach (p => {
         const {goal, profile, cards, player, drawCard} = p;
 
@@ -583,7 +593,7 @@ const Game = () => {
       setTotem (totem);
       initGame ();
 
-      initPlayers (players);
+      initPlayers (game);
 
       socket.current.on ('message', ({message}) => {
         drawMessage (message, 2);
@@ -613,7 +623,7 @@ const Game = () => {
         }
 
         if (playerDrawCard) {
-          updateDraw (playerDrawCard);
+          updateDrawCard (playerDrawCard);
         }
         if (profile) {
           updateProfile (players);
@@ -628,8 +638,7 @@ const Game = () => {
           updatePlayers (players);
         }
         if (totem) {
-          const context = canvasTotem.current.getContext ('2d');
-          requestAnimationFrame (() => updateTotem (context, totem));
+           updateTotem ( totem)
         }
       });
       socket.current.on ('gameEgality', () => {

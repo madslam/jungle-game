@@ -18,15 +18,71 @@ export default class Totem {
     context.fillStyle = 'white';
     context.lineWidth = 4;
     context.beginPath ();
-    context.arc (0, 0, this.radius, 0, 2 * Math.PI);
+    //  context.arc (0, 0, this.radius, 0, 2 * Math.PI);
 
-    // context.fill ();
     context.stroke ();
 
-    /* const test = new Image ();
-    test.src = moon;
-    context.drawImage (test, -40, -40, 80, 80);*/
+    this.drawBezierCircle (0, 0, this.radius * 2, context);
 
     context.restore ();
+  }
+
+  drawBezierCircle (cx, cy, r, context) {
+    var offsetX = 10 * Math.sin (this.count * 2);
+    var offsetY = 10 * Math.cos (this.count * 2);
+    r = r / 2;
+
+    this.count += 0.01;
+
+    context.translate (cx, cy); // translate to centerpoint
+
+    context.beginPath ();
+
+    // top right
+    this.c = this.circ + 0.2 * Math.sin (this.count);
+    context.moveTo (offsetX + 0, offsetY + -r);
+    context.bezierCurveTo (
+      offsetX + this.c * r,
+      offsetY + -r,
+      offsetX + r,
+      offsetY + -this.c * r,
+      offsetX + r,
+      offsetY + 0
+    );
+
+    // bottom right
+    this.c = this.circ + 0.2 * Math.cos (this.count);
+    context.bezierCurveTo (
+      offsetX + r,
+      offsetY + this.c * r,
+      offsetX + this.c * r,
+      offsetY + r,
+      offsetX + 0,
+      offsetY + r
+    );
+
+    // bottom left
+    this.c = this.circ + 0.2 * Math.sin (this.count * 2);
+    context.bezierCurveTo (
+      offsetX + -this.c * r,
+      offsetY + r,
+      offsetX + -r,
+      offsetY + this.c * r,
+      offsetX + -r,
+      offsetY + 0
+    );
+
+    // top left
+    this.c = this.circ + 0.2 * Math.cos (this.count + 1);
+    context.bezierCurveTo (
+      offsetX + -r,
+      offsetY + -this.c * r,
+      offsetX + -this.c * r,
+      offsetY + -r,
+      offsetX + 0,
+      offsetY + -r
+    );
+
+    context.stroke ();
   }
 }

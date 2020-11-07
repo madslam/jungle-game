@@ -96,7 +96,6 @@ export default class Player {
   }
 
   drawBezierCircle (cx, cy, r, context) {
-    console.log ('coucou');
     var offsetX = 5 * Math.sin (this.count);
     var offsetY = 5 * Math.cos (this.count * 2);
     r = r / 2;
