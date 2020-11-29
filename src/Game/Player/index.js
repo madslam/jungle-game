@@ -1,4 +1,4 @@
-import {GAME_WIDTH, GAME_HEIGHT} from '../utils';
+import {MOUSE_COLOR} from '../colors';
 import Particle from '../Particle';
 
 export default class Player {
@@ -13,6 +13,7 @@ export default class Player {
     this.circ = 4 * (Math.sqrt (2) - 1) / 3;
     this.c = this.circ;
     this.count = Math.PI;
+    this.disableClick = false;
   }
 
   initParticle = () => {
@@ -74,22 +75,31 @@ export default class Player {
 
     context.translate (this.position.x, this.position.y);
 
-    context.strokeStyle = '#4ab7dd';
+    context.strokeStyle = MOUSE_COLOR;
     context.lineWidth = 2;
-    context.beginPath ();
-    //context.arc (0, 0, 10, 0, 2 * Math.PI);
-    context.fillStyle = '#4ab7dd';
+    context.fillStyle = MOUSE_COLOR;
 
     context.font = '20px Comic Sans MS';
-    if (this.click) {
+    if (this.disableClick) {
       context.fillStyle = 'red';
+      context.beginPath ();
+      context.arc (0, 0, this.radius, 0, 2 * Math.PI);
+      const img = new Image ();
+
+      img.src = process.env.PUBLIC_URL + `/img/poop.png`;
+
+      context.drawImage (img, -25, -25);
+
+      context.restore ();
+
+      return;
     }
     context.textAlign = 'center';
     if (this.type) {
       context.fillText (this.type, 0, 50);
     }
-    context.stroke ();
     this.drawBezierCircle (0, 0, this.radius, context);
+    context.stroke ();
 
     context.restore ();
     this.animateParticle (context);

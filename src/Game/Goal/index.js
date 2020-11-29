@@ -1,3 +1,5 @@
+import {GAME_HEIGHT, GAME_WIDTH} from '../utils';
+
 export default class Goal {
   constructor({type, position, totemIn, isPlaying, timer}) {
     this.type = type;
@@ -14,27 +16,28 @@ export default class Goal {
   }
 
   render (state, context) {
-    // Screen edges
-    // Delete if it goes out of bounds
-
     context.save ();
     context.translate (this.position.x, this.position.y);
 
     if (this.totemIn) {
-      context.fillStyle = 'yellow';
+      // context.fillStyle = 'yellow';
     } else {
-      context.fillStyle = '#4ef5d2';
+      //  context.fillStyle = '#4ef5d2';
     }
-
-    context.beginPath ();
-
+    // angle in degrees
+    var angleDeg =
+      Math.atan2 (
+        GAME_HEIGHT / 2 - this.position.y,
+        GAME_WIDTH / 2 - this.position.x
+      ) *
+      180 /
+      Math.PI;
+    context.rotate ((angleDeg + 90) * Math.PI / 180);
     context.lineWidth = 3;
 
     context.strokeStyle = 'white';
     context.setLineDash ([13, 13]);
-
-    context.arc (0, 0, 60, 0, 2 * Math.PI);
-    context.stroke ();
+    context.strokeRect (-40, -40, 80, 80);
 
     context.restore ();
   }

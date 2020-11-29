@@ -74,7 +74,7 @@ function animate (
     // Ease back to the original opacity
     var originalOpacity = 1;
     opacity += (originalOpacity - opacity) * 0.01;
-    context.fillStyle = 'rgba(0, 0, 0)';
+    context.fillStyle = 'white';
 
     // Ease back to the original speed
     var originalSpeed = 0.001;
@@ -82,7 +82,7 @@ function animate (
     timer += speed;
   }
 
-  context.fillRect (0, 0, width, height);
+  context.clearRect (0, 0, width, height);
   context.translate (width / 2, height / 2);
   context.rotate (timer);
 

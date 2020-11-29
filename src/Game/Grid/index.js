@@ -5,7 +5,7 @@ export const drawGrid = (context, width, height) => {
   let pR = s;
   let pB = s;
 
-  context.strokeStyle = 'lightgrey';
+  context.strokeStyle = 'white';
   context.beginPath ();
   for (var x = pL; x <= width - pR; x += s) {
     context.moveTo (x, pT);

@@ -3,6 +3,12 @@ import {Divider, Row, Col} from 'antd';
 
 import Card from '../Game/Card';
 
+const CANVAS_SIZE = 125;
+
+const randomRotation = () =>
+  (Math.floor (Math.random () * 10) + 1) *
+  (Math.floor (Math.random () * 2) === 1 ? 1 : -1);
+
 const SkinCardSelection = ({socket}) => {
   const canvasPepe = useRef (null);
   const canvasPokemon = useRef (null);
@@ -15,21 +21,30 @@ const SkinCardSelection = ({socket}) => {
     const contextConnect = canvasPokemon.current.getContext ('2d');
     const contextBase = canvasBase.current.getContext ('2d');
     const contextCircle = canvasTroubadour.current.getContext ('2d');
+    const position = {x: CANVAS_SIZE / 2, y: CANVAS_SIZE / 2};
     const basicCard = new Card ({
-      position: {x: 50, y: 50},
+      position,
+      rotationAuto: false,
+      rotation: randomRotation (),
     });
     const pepeCard = new Card ({
-      position: {x: 50, y: 50},
+      position,
       skinCard: 'pepe',
       show: false,
+      rotationAuto: false,
+      rotation: randomRotation (),
     });
     const pokemonCard = new Card ({
-      position: {x: 50, y: 50},
+      position,
       skinCard: 'pokemon',
+      rotationAuto: false,
+      rotation: randomRotation (),
     });
     const troubadourCard = new Card ({
-      position: {x: 50, y: 50},
+      position,
       skinCard: 'troubadour',
+      rotationAuto: false,
+      rotation: randomRotation (),
     });
     const gameLoop = () => {
       contextBase.clearRect (0, 0, 100, 100);
@@ -63,8 +78,8 @@ const SkinCardSelection = ({socket}) => {
         <Col>
           <canvas
             className={skinCardClassname ('')}
-            width={100}
-            height={100}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
             onClick={() => changeSkinCard ('')}
             ref={canvasBase}
           />
@@ -74,8 +89,8 @@ const SkinCardSelection = ({socket}) => {
           <canvas
             className={skinCardClassname ('pepe')}
             onClick={() => changeSkinCard ('pepe')}
-            width={100}
-            height={100}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
             ref={canvasPepe}
           />
           <p>Pepe</p>
@@ -84,8 +99,8 @@ const SkinCardSelection = ({socket}) => {
         <Col>
           <canvas
             className={skinCardClassname ('pokemon')}
-            width={100}
-            height={100}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
             onClick={() => changeSkinCard ('pokemon')}
             ref={canvasPokemon}
           />
@@ -95,8 +110,8 @@ const SkinCardSelection = ({socket}) => {
         <Col>
           <canvas
             className={skinCardClassname ('troubadour')}
-            width={100}
-            height={100}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
             onClick={() => changeSkinCard ('troubadour')}
             ref={canvasTroubadour}
           />

@@ -18,13 +18,12 @@ export {db};
 
 export const auth = firebase.auth ();
 const googleProvider = new firebase.auth.GoogleAuthProvider ();
-export const signInWithGoogle = () => {
-  auth
-    .signInWithPopup (googleProvider)
-    .then (res => {
-      console.log (res.user);
-    })
-    .catch (error => {
-      console.log (error.message);
-    });
+export const signInWithGoogle = async () => {
+  try {
+    const res = await auth.signInWithPopup (googleProvider);
+    console.log ('oklm', res.user);
+    return res.user;
+  } catch (error) {
+    console.log (error.message);
+  }
 };

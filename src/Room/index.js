@@ -1,27 +1,58 @@
 import React, {useState, useEffect} from 'react';
-import {Button, message, Layout, Row, Col} from 'antd';
+import {message} from 'antd';
 import {useHistory} from 'react-router-dom';
+import {AwesomeButton, AwesomeButtonSocial} from 'react-awesome-button';
+import {Avatar} from 'antd';
+import {UserOutlined} from '@ant-design/icons';
 
 import {db} from '../database/firebase';
-import CreateRoomModal from './CreateRoomModal';
 import {signInWithGoogle} from '../database/firebase';
-import SkinSelection from '../Lobby/SkinSelection';
+import Game from '../Game';
+
 const Room = () => {
-  const [rooms, setRooms] = useState ([]);
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams (queryString);
+  const idGame = urlParams.get ('idGame');
+
+  const [user, setUser] = useState ({});
+
   const [loading, setLoading] = useState (false);
+  const [gameId, setGameId] = useState ();
+  const [namePlayer, setNamePlayer] = useState ();
+
   const history = useHistory ();
   useEffect (() => {
-    getRooms ();
+    changePlayerName (localStorage.getItem ('NAME_PLAYER'));
+    draw ();
   }, []);
-  const getRooms = async () => {
-    setLoading (true);
-    const roomsDB = await db.collection ('rooms').get ();
-    const newRooms = [];
-    roomsDB.forEach (doc => newRooms.push ({...doc.data (), id: doc.id}));
-    setRooms (newRooms);
-    setLoading (false);
-  };
 
+  const signIn = async () => {
+    const newUser = await signInWithGoogle ();
+    changePlayerName (newUser.displayName);
+    setUser (newUser);
+    console.log (newUser.displayName);
+  };
+  const changePlayerName = value => {
+    if (value && value.length < 10) {
+      setNamePlayer (value);
+      localStorage.setItem ('NAME_PLAYER', value);
+    }
+  };
+  const createNewGame = async () => {
+    if (idGame) {
+      setGameId (idGame);
+      console.log ('la game existe déjà !');
+      return;
+    }
+    setLoading (true);
+    const room = await db.collection ('rooms').add ({
+      numberPlayer: 2,
+      timePerRound: 5,
+      full: false,
+    });
+    setLoading (false);
+    setGameId (room.id);
+  };
   const joinRandomRoom = async () => {
     setLoading (true);
     const roomsRef = await db.collection ('rooms');
@@ -37,45 +68,84 @@ const Room = () => {
       return;
     }
     roomsAvalaible.forEach (doc => {
-      console.log (doc.id, '=>', doc.data ());
       history.push (`/game/${doc.id}`);
     });
   };
 
-  return (
-    <Layout className="center">
-      <div className="centerContent">
-        <Row gutter={[16, 16]} justify="center">
-          <Col>
-            <Button type="primary" onClick={getRooms}>Refresh room</Button>
-          </Col>
-          <Col>
-            <CreateRoomModal />
-          </Col>
-          <Col>
-            <Button type="primary" onClick={joinRandomRoom}>
-              join random room
-            </Button>
-          </Col>
-          <Col />
-        </Row>
+  function draw () {
+    var context = document.getElementById ('canvas').getContext ('2d');
+    context.font = '48px Balsamiq Sans';
+    context.fillStyle = 'white';
+    context.textAlign = 'center';
 
-        <Row gutter={24} justify="center">
-          <Button
-            className="buttonGoogle"
-            type="primary"
-            onClick={signInWithGoogle}
-          >
-            <img
-              src={process.env.PUBLIC_URL + `/img/GoogleLOGO.png`}
-              alt="google icon"
+    var width = document.getElementById ('canvas').width;
+    var height = document.getElementById ('canvas').height;
+    console.log ('coucou', width);
+    context.translate (width / 2, height / 2);
+
+    context.fillText ('DragMe.io', 0, 0);
+  }
+  if (gameId) {
+    return (
+      <Game
+        gameId={gameId}
+        setGameId={setGameId}
+        userPhotoURL={user.photoURL}
+        namePlayer={namePlayer}
+      />
+    );
+  }
+
+  return (
+    <div class="flex items-center justify-center h-screen">
+      <div>
+        <canvas id="canvas" width="350" height="120" />
+
+        <div class="flex items-center justify-center m-5">
+
+          <div class="mr-5">
+            <Avatar
+              size={64}
+              icon={<UserOutlined />}
+              src={user && user.photoURL}
             />
-            <span> Continue with Google</span>
-          </Button>
-        </Row>
+          </div>
+
+          <input
+            type="text"
+            class="bg-purple-white shadow rounded border-0 p-3"
+            value={namePlayer}
+            onChange={event => changePlayerName (event.target.value)}
+            placeholder="Enter your name bg"
+          />
+
+        </div>
+        <div class="grid grid-cols-4 gap-4">
+
+          <div class="col-span-2">
+            <AwesomeButton
+              disabled={loading}
+              type="primary"
+              onPress={createNewGame}
+            >
+              {idGame ? 'Join the game' : 'Create a game'}
+            </AwesomeButton>
+          </div>
+          <div class="col-span-2">
+            <AwesomeButton type="primary" onPress={joinRandomRoom}>
+              Join random game
+            </AwesomeButton>
+          </div>
+          <div />
+        </div>
+        <div class="flex justify-center">
+          <AwesomeButtonSocial type="gplus" onPress={signIn}>
+            Continue with Google
+          </AwesomeButtonSocial>
+        </div>
       </div>
 
-    </Layout>
+    </div>
   );
 };
 
