@@ -24,7 +24,7 @@ function LightParticle (x, y, radius, color) {
 }
 
 export const initializeParticles = function (context, width, height) {
-  const particleCount = 700;
+  const particleCount = 70;
   var lightParticles = [];
 
   var timer = 0;

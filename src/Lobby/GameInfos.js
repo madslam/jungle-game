@@ -24,8 +24,8 @@ const GameInfos = () => {
   return (
     <div>
       <div class="p-4 w-full">
-        <div class="grid grid-cols-12 gap-6">
-          <div class="col-span-12">
+        <div class="grid gap-3 grid-cols-8">
+          <div class="col-span-8">
             <div class="flex flex-row bg-white shadow-sm rounded p-4">
               <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-blue-100 text-blue-500">
                 <SmileOutlined style={{fontSize: '30px'}} />
@@ -36,7 +36,7 @@ const GameInfos = () => {
               </div>
             </div>
           </div>
-          <div class="col-span-12 ">
+          <div class="col-span-8 ">
             <div class="flex flex-row bg-white shadow-sm rounded p-4">
               <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-green-100 text-green-500">
                 <FieldTimeOutlined style={{fontSize: '30px'}} />
@@ -47,7 +47,7 @@ const GameInfos = () => {
               </div>
             </div>
           </div>
-          <div class="col-span-12">
+          <div class="col-span-8">
             <div class="flex flex-row bg-white shadow-sm rounded p-4">
               <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-orange-100 text-orange-500">
                 <svg
@@ -71,7 +71,7 @@ const GameInfos = () => {
               </div>
             </div>
           </div>
-          <div class="col-span-12">
+          <div class="col-span-8">
             <div class="flex flex-row bg-white shadow-sm rounded p-4">
               <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-red-100 text-red-500">
                 <svg
@@ -96,30 +96,33 @@ const GameInfos = () => {
             </div>
           </div>
         </div>
-      </div>
-      <div class="flex justify-center">
-        <AwesomeButton type="primary" onPress={playerReady}>
-          Ready to play
-        </AwesomeButton>
-      </div>
-      <div class="p-4 w-full">
-        <div class="flex flex-row shadow-sm rounded p-4">
-          <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-green-100 text-blue-500">
-            <CopyOutlined
-              style={{fontSize: '30px'}}
-              onClick={() =>
-                copyGameUrl (`${window.location.origin}/?idGame=${game.id}`)}
-            />
-          </div>
-          <div class="flex flex-col flex-grow ml-4">
-            <div class="text-sm text-green-500">
-              copy to play with friend
-            </div>
-            <div class="font-bold text-blue-200 text-sm">
-              {`${window.location.origin}/?idGame=${game.id}`}
-            </div>
-          </div>
+        <div class="col-span-8 text-center  p-4">
+          <AwesomeButton type="primary" onPress={playerReady}>
+            Ready to play
+          </AwesomeButton>
         </div>
+        {!game.start &&
+          <div class="col-span-8 text-center">
+            <div class="flex flex-row shadow-sm rounded p-4">
+              <div class="flex items-center justify-center flex-shrink-0 h-12 w-12 rounded-xl bg-green-100 text-blue-500">
+                <CopyOutlined
+                  style={{fontSize: '30px'}}
+                  onClick={() =>
+                    copyGameUrl (
+                      `${window.location.origin}/?idGame=${game.id}`
+                    )}
+                />
+              </div>
+              <div class="flex flex-col flex-grow ml-4">
+                <div class="text-sm text-green-500">
+                  copy to play with friend
+                </div>
+                <div class="font-bold text-blue-200 text-sm">
+                  {`${window.location.origin}/?idGame=${game.id}`}
+                </div>
+              </div>
+            </div>
+          </div>}
       </div>
     </div>
   );

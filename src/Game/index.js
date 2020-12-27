@@ -26,12 +26,16 @@ import Lobby from '../Lobby';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
+  FRAME_MIN_TIME,
   updateMousePosition,
   updatePosition,
   checkCollision,
 } from './utils';
 import {initializeParticles} from './animation/light-particle';
 import GameContext from './GameContext';
+import GameInfos from '../Lobby/GameInfos';
+
+let lastFrameTime = 0; // the last frame time
 
 const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
   const history = useHistory ();
@@ -39,6 +43,8 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
   const socket = useRef (null);
 
   const [game, setGame] = useState (false);
+  const [gameHistory, setGameHistory] = useState ([]);
+
   const [playerPlay, setPlayerPlay] = useState (false);
 
   const gamu = useRef ({
@@ -51,6 +57,7 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
   const canvas = useRef (null);
   const canvasBackground = useRef (null);
   const canvasScoreLooser = useRef (null);
+  const gameDiv = useRef (null);
 
   const [totem, _setTotem] = useState ();
 
@@ -114,12 +121,6 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
     messageAntd.success ({
       content: message,
       duration: time,
-      className: 'custom-class',
-      style: {
-        marginTop: '40vh',
-        fontSize: '40px',
-        zIndex: 100,
-      },
     });
   };
 
@@ -131,12 +132,13 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
     const x = mouseX * context.canvas.width / context.canvas.clientWidth;
     const y = mouseY * context.canvas.height / context.canvas.clientHeight;
 
-    return {x, y};
+    return {x: Math.round (x), y: Math.round (y)};
   };
 
   const handleMouseMove = throttle (({clientX, clientY}) => {
     if (canvas.current) {
       const {x, y} = scaleMouse ({clientX, clientY});
+
       let position = {
         x,
         y,
@@ -158,16 +160,17 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         playerRef.current.timeOut = Date.now ();
       }
       if (!checkColisionZone && playerRef.current.timeOut) {
-        console.log ('oklm');
         socket.current.emit ('shitPlayer', false);
 
         playerRef.current.timeOut = null;
       }
-      socket.current.emit ('mouse', position);
+      socket.current.emit('mouse', position);
+
+
     }
   }, 20); //eslint-disable-line
 
-  const handleMouseDown = useCallback (({clientX, clientY}) => {
+  const handleMouseDown =({clientX, clientY}) => {
     if (canvas.current) {
       const {x, y} = scaleMouse ({clientX, clientY});
       let position = {
@@ -178,7 +181,6 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         const timeInZone = Math.floor (
           (Date.now () - playerRef.current.timeOut) / 1000
         );
-        console.log ('ca commence', timeInZone);
         if (timeInZone > 3) {
           return;
         }
@@ -187,10 +189,10 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
 
       socket.current.emit ('mouseDown', position);
     }
-  });
-  const handleMouseUp = useCallback (() => {
+  };
+  const handleMouseUp = () => {
     socket.current.emit ('mouseUp');
-  });
+  };
   const handleResize = (value, e) => {
     const context = canvasBackground.current.getContext ('2d');
     setState ({
@@ -282,9 +284,9 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         );
 
         if (p.drawCard.shadowOffsetY > 0) {
-          p.drawCard.shadowOffsetX = p.drawCard.shadowOffsetX - 0.5;
-          p.drawCard.shadowOffsetY = p.drawCard.shadowOffsetY - 0.5;
-          p.drawCard.shadowBlur = p.drawCard.shadowBlur - 0.5;
+          p.drawCard.shadowOffsetX = p.drawCard.shadowOffsetX - 1;
+          p.drawCard.shadowOffsetY = p.drawCard.shadowOffsetY - 1;
+          p.drawCard.shadowBlur = p.drawCard.shadowBlur - 1;
         }
         if (newTime <= 0) {
           p.drawCard.animation = false;
@@ -308,9 +310,9 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
   useLayoutEffect (() => {
     socket.current = gameId
       ? io (
-          `159.65.115.34/?id=${gameId}&namePlayer=${namePlayer}&imgPlayer=${userPhotoURL}`
+          `localhost:8080/?id=${gameId}&namePlayer=${namePlayer}&imgPlayer=${userPhotoURL}`
         )
-      : io (`159.65.115.34/`);
+      : io (`localhost:8080/`);
     socket.current.on ('connect', function (data) {});
     socket.current.on ('gameNotExist', () => {
       messageAntd.error (
@@ -361,8 +363,15 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         }
       }, 100);
     };
-    function gameLoop () {
+    function gameLoop (time) {
       // Update game objects in the loop
+      if (time - lastFrameTime < FRAME_MIN_TIME) {
+        //skip the frame if the call is too early
+        window.requestAnimationFrame (gameLoop);
+
+        return;
+      }
+      lastFrameTime = time; // remember the time of the rendered frame
 
       if (gamu.current.animation.health) {
         doAnimationHealth ();
@@ -510,13 +519,14 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         gamu.current.players[index].cards = cards;
       });
     };
-    const updatePlayers = players => {
+    const updatePlayersPosition = players => {
       const currentPlayer = playerRef.current;
 
       players.forEach ((p, index) => {
         const positionPlayer = updatePosition (currentPlayer, p.position);
         gamu.current.players[index].player.disableClick = p.disableClick;
         gamu.current.players[index].player.position = positionPlayer;
+
       });
     };
 
@@ -628,7 +638,6 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
             (Date.now () - currentPlayer.timeOut) / 1000
           );
           if (timeInZone > 3) {
-            console.log ('coucou');
             socket.current.emit ('shitPlayer', true);
           }
         }
@@ -666,7 +675,11 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
 
       initPlayers (game);
 
-      socket.current.on ('message', ({message}) => {
+      socket.current.on ('message', ({message, history}) => {
+        if (history) {
+          console.log ('coucou', history);
+          setGameHistory (history);
+        }
         drawMessage (message, 2);
       });
       socket.current.on ('update', gameUpdate => {
@@ -705,7 +718,7 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
           updateCards (players);
         }
         if (playersMove) {
-          updatePlayers (players);
+          updatePlayersPosition (players);
         }
         if (totem) {
           updateTotem (totem);
@@ -755,7 +768,7 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
       window.addEventListener ('mousemove', handleMouseMove);
       window.addEventListener ('mousedown', handleMouseDown);
       window.addEventListener ('mouseup', handleMouseUp);
-      gameLoop ();
+      window.requestAnimationFrame (gameLoop);
     });
   }, []); //eslint-disable-line
   useEffect (
@@ -793,24 +806,45 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
               height={state.heightUser}
               ref={canvasBackground}
             />
-            <span className="score current-score">
-              Round : {playerPlay && 'Player ' + playerPlay.type}
-            </span>
-            <div id="game">
-              <canvas
-                id="ui-looser"
-                width={state.screen.width}
-                height={state.screen.height}
-                ref={canvasScoreLooser}
-              />
 
-              <canvas
+            <div class="flex flex-col md:flex-row items-center justify-center">
+
+              <div class="order-2 md:order-1 ">
+                <span className="score current-score">
+                  Round : {playerPlay && 'Player ' + playerPlay.type}
+                </span>
+                <GameInfos />
+              </div>
+
+              <div
+                id="game"
+                ref={gameDiv}
+                class="order-first md:order-2 w-screen md:w-4/6 h-screen"
+            >
+              
+                <canvas
+                id="ui-looser"
+                class="w-11/12 md:w-3/6 h-5/6"
+                  width={state.screen.width}
+                  height={state.screen.height}
+                  ref={canvasScoreLooser}
+                />
+
+                <canvas
                 id="ui-layer"
-                width={state.screen.width}
-                height={state.screen.height}
-                ref={canvas}
-              />
+                class="w-11/12 md:w-3/6 h-5/6"
+
+                  width={state.screen.width}
+                  height={state.screen.height}
+                  ref={canvas}
+                />
+              </div>
+              <div class="order-3">
+
+                <GameInfos />
+              </div>
             </div>
+
           </div>}
     </GameContext.Provider>
   );

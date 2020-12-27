@@ -1,5 +1,3 @@
-import moon from './moon.png';
-
 export default class Totem {
   constructor({position, playerMove, radius}) {
     this.position = position;
@@ -19,15 +17,14 @@ export default class Totem {
     context.fillStyle = 'white';
     context.lineWidth = 4;
     context.beginPath ();
-    // context.arc (0, 0, 360, 0, 2 * Math.PI);
-    context.arc (0, 0, 200, 0, 2 * Math.PI);
+    //context.arc (0, 0, 200, 0, 2 * Math.PI);
 
     context.stroke ();
 
-    //  this.drawBezierCircle (0, 0, this.radius * 2, context);
+    this.drawBezierCircle (0, 0, this.radius * 2, context);
     context.restore ();
-    this.drawEyes (mouse, context, 'white', 1.2, 10);
-    this.drawEyes (mouse, context, 'back', 4, 2);
+    /* this.drawEyes (mouse, context, 'white', 1.2, 10);
+    this.drawEyes (mouse, context, 'back', 4, 2);*/
   }
   drawEyes (mouse, context, color, size, rad) {
     context.save ();

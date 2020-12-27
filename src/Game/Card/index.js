@@ -82,7 +82,7 @@ export default class Card {
     this.rotation = rotation;
     this.rotationAuto = rotationAuto;
     this.skinCard = skinCard;
-    this.translation = 4;
+    this.translation = 13;
     this.height = 100;
     this.flip = false;
     this.time = 0;
@@ -105,7 +105,7 @@ export default class Card {
 
       return null;
     } else {
-      this.height = newHeight;
+      this.height = Math.round (newHeight);
     }
   }
   render (state, context) {

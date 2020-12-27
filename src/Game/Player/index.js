@@ -33,19 +33,20 @@ export default class Player {
   connect (context, particles) {
     let opacity = 1;
     particles.forEach ((particle, i) => {
-      for (let a = i; a < particles.length; a++) {
+      for (let a = i; a < 4; a++) {
         const distance =
           particle.x -
           particles[a].x * particle.x -
           particles[a].x +
           (particle.y - particles[a].y * particle.y - particles[a].y);
-        if (distance < 200) {
+        if (distance < 1000) {
           opacity = 1 - distance / 10000;
           context.strokeStyle = 'rgb(255,255,255' + opacity + ')';
           context.beginPath ();
           context.lineWidth = 1;
           context.moveTo (particle.x, particle.y);
           context.lineTo (particles[a].x, particles[a].y);
+
           context.stroke ();
         }
       }
@@ -98,7 +99,14 @@ export default class Player {
     if (this.type) {
       context.fillText (this.type, 0, 50);
     }
-    this.drawBezierCircle (0, 0, this.radius, context);
+    if (this.skin === 'pq') {
+      const img = new Image ();
+
+      img.src = process.env.PUBLIC_URL + `/img/pq.png`;
+      context.drawImage (img, -25, -25);
+    } else {
+      this.drawBezierCircle (0, 0, this.radius, context);
+    }
     context.stroke ();
 
     context.restore ();

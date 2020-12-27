@@ -30,7 +30,6 @@ const Room = () => {
     const newUser = await signInWithGoogle ();
     changePlayerName (newUser.displayName);
     setUser (newUser);
-    console.log (newUser.displayName);
   };
   const changePlayerName = value => {
     if (value && value.length < 10) {
@@ -41,7 +40,6 @@ const Room = () => {
   const createNewGame = async () => {
     if (idGame) {
       setGameId (idGame);
-      console.log ('la game existe déjà !');
       return;
     }
     setLoading (true);
@@ -80,7 +78,6 @@ const Room = () => {
 
     var width = document.getElementById ('canvas').width;
     var height = document.getElementById ('canvas').height;
-    console.log ('coucou', width);
     context.translate (width / 2, height / 2);
 
     context.fillText ('DragMe.io', 0, 0);

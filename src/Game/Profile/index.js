@@ -1,3 +1,5 @@
+import {GAME_WIDTH} from '../utils';
+
 CanvasRenderingContext2D.prototype.roundRect = function (
   posx,
   posy,
@@ -51,6 +53,9 @@ export default class Profile {
     img,
   }) {
     this.position = position;
+    if (this.position.x > GAME_WIDTH / 2) {
+      this.position.x = this.position.x + 200;
+    }
     this.radius = radius;
     this.name = name;
     this.health = health;
@@ -112,7 +117,7 @@ export default class Profile {
     context.translate (this.position.x, this.position.y);
 
     context.fillStyle = 'steelblue';
-    if (this.img) {
+    /* if (this.img) {
       context.save ();
       const img = new Image ();
       img.src = this.img;
@@ -138,6 +143,7 @@ export default class Profile {
       context.closePath ();
       context.restore ();
     }
+    */
     context.beginPath ();
     context.strokeStyle = 'steelblue';
 

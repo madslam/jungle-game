@@ -1,7 +1,9 @@
 const colors = [
-  {r: 255, g: 71, b: 71},
-  {r: 0, g: 206, b: 237},
+  {r: 45, g: 220, b: 127},
+  {r: 300, g: 206, b: 237},
   {r: 255, g: 255, b: 255},
+  {r: 37, g: 180, b: 238},
+  {r: 238, g: 37, b: 141},
 ];
 
 export default class Particle {
@@ -41,7 +43,7 @@ export default class Particle {
     context.stroke ();
   }
   update (mousePosition) {
-    this.size -= 0.3;
+    this.size -= 0.6;
     if (this.size < 0) {
       this.x = mousePosition.x + (Math.random () * 20 - 10);
       this.y = mousePosition.y + (Math.random () * 20 - 10);
@@ -49,9 +51,9 @@ export default class Particle {
       this.weigth = Math.random () * 2 - 0.5;
     }
     this.y += this.weigth;
-    this.weigth += 0.01;
+    this.weigth += 0.1;
     if (this.y > 900 - this.size) {
-      this.weigth *= -0.01;
+      this.weigth *= -0.1;
     }
   }
 }

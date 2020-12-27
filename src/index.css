@@ -1,10 +1,9 @@
-
-
+@import url('https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@700&display=swap');
 
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Balsamiq Sans',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -52,54 +51,48 @@ margin-right: 2px;
   margin: auto;
   display: block;
 
+}
 
-}
-.current-score {
-  left: 10%;
-}
-.top-score {
-  right: 10%;
-}
 .score {
   border-radius: 15px;
   border: solid;
   text-align: center;
   width: 160px;
   color:white;
-  display: block;
-  position: absolute;
-  top: 15px;
-  z-index: 1;
   font-size: 20px;
 }
-#game > canvas {
+
+#ui-looser { 
+  z-index: 100;  
   padding: 0;
   margin: auto;
   display: block;
-  height: 99%;
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   cursor:none; 
-
-}
-
-#ui-looser { 
-  z-index: 100;    
+  
 }
 
 #ui-layer { 
+  padding: 0;
+  margin: auto;
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  cursor:none; 
   z-index: 40;
   border-radius: 15px;
   border:solid;
   border-color: white;
-  border-style: solid; }
+   }
 #background-layer { 
-
 z-index: 1;
-height: 100%;
 margin: 0;
 position: fixed;
 }
@@ -115,6 +108,9 @@ position: fixed;
   border: solid 5px;
   border-color: #0087ff;
   border-radius: 14px;
+}
 
-
+.rec.rec-arrow {
+  background-color:none;
+  color: white;
 }

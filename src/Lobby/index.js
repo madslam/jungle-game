@@ -11,7 +11,6 @@ import GameInfos from './GameInfos';
 
 const Lobby = () => {
   const {game, socket} = useContext (GameContext);
-  console.log (game, socket);
 
   return (
     <div class="container mx-auto mt-5">

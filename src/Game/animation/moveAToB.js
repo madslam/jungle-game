@@ -9,9 +9,9 @@ export const easeOutBounce = (t, b, c, d) => {
     return c * (7.5625 * (t -= 2.625 / 2.75) * t + 0.984375) + b;
   }
 };
-var animationLength = 500;
+var animationLength = 200;
 export const objectReturn = (time, object, basePosition) => {
-  time = time + 2;
+  time = time + 3;
 
   let elapsed = time;
   if (elapsed > animationLength) {
@@ -32,8 +32,8 @@ export const objectReturn = (time, object, basePosition) => {
   );
 
   const objectPosition = {
-    x: x * 100 / 100,
-    y: y * 100 / 100,
+    x: Math.round (x * 100 / 100),
+    y: Math.round (y * 100 / 100),
   };
   object.position = objectPosition;
 

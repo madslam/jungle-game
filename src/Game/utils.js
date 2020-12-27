@@ -2,6 +2,10 @@ export const GAME_WIDTH = 1000;
 
 export const GAME_HEIGHT = 900;
 
+export const FRAMES_PER_SECOND = 30; // Valid values are 60,30,20,15,10...
+// set the mim time to render the next frame
+export const FRAME_MIN_TIME =
+  1000 / 60 * (60 / FRAMES_PER_SECOND) - 1000 / 60 * 0.5;
 function rotate (x, y, angle) {
   const cx = GAME_WIDTH / 2;
   const cy = GAME_HEIGHT / 2;
@@ -16,8 +20,8 @@ export const updatePosition = (player, position) => {
   const {angle} = player;
   const {x, y} = rotate (position.x, position.y, 360 - angle);
   return {
-    x,
-    y,
+    x: Math.round (x),
+    y: Math.round (y),
   };
 };
 
@@ -25,8 +29,8 @@ export const updateMousePosition = (player, position) => {
   const {angle} = player;
   const {x, y} = rotate (position.x, position.y, angle - 360);
   return {
-    x,
-    y,
+    x: Math.round (x),
+    y: Math.round (y),
   };
 };
 
