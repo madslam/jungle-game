@@ -70,7 +70,8 @@ const SkinSelection = ({socket}) => {
 
   const changeSkin = value => {
     setSkin (value);
-    socket.current.emit ('setSkin', value);
+    socket.current.send (JSON.stringify ({action: 'setSkin', data: value})) 
+
   };
   return (
     <Fragment>

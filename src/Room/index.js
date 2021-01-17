@@ -8,6 +8,7 @@ import {UserOutlined} from '@ant-design/icons';
 import {db} from '../database/firebase';
 import {signInWithGoogle} from '../database/firebase';
 import Game from '../Game';
+import GameUws from '../Game/GameUws';
 
 const Room = () => {
   const queryString = window.location.search;
@@ -84,7 +85,7 @@ const Room = () => {
   }
   if (gameId) {
     return (
-      <Game
+      <GameUws
         gameId={gameId}
         setGameId={setGameId}
         userPhotoURL={user.photoURL}

@@ -13,7 +13,8 @@ const GameInfos = () => {
   const {game, socket} = useContext (GameContext);
 
   const playerReady = () => {
-    socket.current.emit ('playerReady');
+    socket.current.send (JSON.stringify ({action: 'playerReady'})) 
+
   };
 
   const copyGameUrl = url => {

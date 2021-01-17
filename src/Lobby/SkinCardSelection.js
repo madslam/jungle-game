@@ -67,8 +67,9 @@ const SkinCardSelection = ({socket}) => {
 
   const changeSkinCard = value => {
     setSkin (value);
+    socket.current.send (JSON.stringify ({action: 'setSkinCard', data: value})) 
 
-    socket.current.emit ('setSkinCard', value);
+    
   };
   return (
     <Fragment>

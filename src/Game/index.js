@@ -164,6 +164,7 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
 
         playerRef.current.timeOut = null;
       }
+
       socket.current.emit('mouse', position);
 
 
@@ -187,7 +188,8 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
       }
       position = updateMousePosition (playerRef.current, position);
 
-      socket.current.emit ('mouseDown', position);
+      socket.current.emit('mouseDown', position);
+      
     }
   };
   const handleMouseUp = () => {
@@ -307,6 +309,277 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
     }
   };
 
+  const searchNextRound = ({profile, player}) => {
+    clearInterval (nextRoundInterval.current);
+    return setInterval (() => {
+      const currentPlayer = playerRef.current;
+      if (!profile.isPlaying) {
+        return;
+      }
+      if (profile.isPlaying && currentPlayer.type === player.type) {
+        const timePassed =
+          profile.timePerRound -
+          Math.floor ((Date.now () - profile.isPlaying) / 1000);
+
+        if (timePassed <= 0) {
+          profile.isPlaying = null;
+          socket.current.emit ('nextRound');
+          clearInterval (nextRoundInterval.current);
+        }
+      }
+    }, 100);
+  };
+  const updateTotem = totem => {
+    const currentPlayer = playerRef.current;
+    const totemPosition = updatePosition (currentPlayer, totem.position);
+    gamu.current.totem.position = totemPosition;
+  };
+
+  const updateDrawCard = playerDrawCard => {
+    const currentPlayer = playerRef.current;
+
+    const playerGame = gamu.current.players.find (
+      p => p.player.id === playerDrawCard.id
+    );
+    const positionDrawCard = playerDrawCard.drawCard.position;
+
+    if (positionDrawCard) {
+      const positionDrawCard = updatePosition (
+        currentPlayer,
+        playerDrawCard.drawCard.position
+      );
+      const drawCard = new Card ({
+        ...playerDrawCard.drawCard,
+        skinCard: playerDrawCard.skinCard,
+        image: images.current['card-' + playerDrawCard.drawCard.value],
+        position: positionDrawCard,
+      });
+
+      playerGame.drawCard = drawCard;
+    } else {
+      playerGame.drawCard = null;
+    }
+  };
+
+  const updateProfile = players => {
+    const currentPlayer = playerRef.current;
+
+    players.forEach ((p, index) => {
+      const {profile, goal, isPlaying} = p;
+      const positionGoal = updatePosition (currentPlayer, goal.position);
+
+      const newProfile = new Profile ({
+        ...profile,
+        position: {
+          x: positionGoal.x - 100,
+          y: positionGoal.y,
+        },
+        isPlaying,
+      });
+      gamu.current.players[index].profile = newProfile;
+    });
+  };
+  const updateRound = players => {
+    gamu.current.players.forEach (p => (p.profile.isPlaying = null));
+    players.forEach ((p, index) => {
+      const {isPlaying} = p;
+      gamu.current.players[index].profile.isPlaying = isPlaying;
+      if (isPlaying) {
+        nextRoundInterval.current = searchNextRound (
+          gamu.current.players[index]
+        );
+      }
+    });
+  };
+
+  const updateCards = players => {
+    const currentPlayer = playerRef.current;
+
+    players.forEach ((p, index) => {
+      const cards = p.deck.cards.map (c => {
+        let positionCard = updatePosition (currentPlayer, c.position);
+        return new Card ({
+          ...c,
+          image: images.current['card-' + c.value],
+          position: positionCard,
+          skinCard: p.skinCard,
+        });
+      });
+      gamu.current.players[index].cards = cards;
+    });
+  };
+  const updatePlayersPosition = players => {
+    const currentPlayer = playerRef.current;
+
+    players.forEach ((p, index) => {
+      const positionPlayer = updatePosition (currentPlayer, p.position);
+      gamu.current.players[index].player.disableClick = p.disableClick;
+      gamu.current.players[index].player.position = positionPlayer;
+
+    });
+  };
+
+  const initPlayers = ({players, totem}) => {
+    const currentPlayer = playerRef.current;
+
+    const newTotem = new Totem ({
+      ...totem,
+    });
+    gamu.current.totem = newTotem;
+    gamu.current.players = [];
+    players.forEach (p => {
+      const positionGoal = updatePosition (currentPlayer, p.goal.position);
+
+      const positionBunch = updatePosition (
+        currentPlayer,
+        p.deck.positionBunch
+      );
+      const positionPlayer = updatePosition (currentPlayer, p.position);
+
+      const {goal, deck, profile, timer, isPlaying} = p;
+      const newGoal = new Goal ({
+        ...goal,
+        position: positionGoal,
+        timer,
+      });
+
+      const current = currentPlayer.type === p.type;
+      const newDeck = new Deck ({
+        ...deck,
+        positionBunch,
+        current,
+      });
+
+      const newProfile = new Profile ({
+        ...profile,
+        position: {
+          x: positionGoal.x - 100,
+          y: positionGoal.y,
+        },
+        isPlaying,
+      });
+      if (isPlaying) {
+        nextRoundInterval.current = searchNextRound ({
+          profile: newProfile,
+          player: p,
+        });
+      }
+
+      const newPlayer = new Player ({...p, position: positionPlayer});
+      const cards = p.deck.cards.map (c => {
+        let positionCard = updatePosition (currentPlayer, c.position);
+
+        return new Card ({
+          ...c,
+          image: images.current['card-' + c.value],
+          position: positionCard,
+          skinCard: p.skinCard,
+        });
+      });
+      const player = {
+        goal: newGoal,
+        deck: newDeck,
+        profile: newProfile,
+        player: newPlayer,
+        bunchCards: [],
+        cards,
+      };
+      gamu.current.players.push (player);
+    });
+  };
+
+  const drawPlayers = () => {
+    if (!canvas.current) {
+      return;
+    }
+    const context = canvas.current.getContext ('2d');
+    const currentPlayer = playerRef.current;
+
+    context.clearRect (0, 0, state.screen.width, state.screen.height);
+
+    gamu.current.totem.render (playerRef.current.position, context);
+
+    gamu.current.players.forEach (p => {
+      const {deck, goal} = p;
+      deck.render (state, context);
+      goal.render (state, context);
+    });
+    Object.values (gamu.current.bunchCards).forEach (card =>
+      card.render (state, context)
+    );
+    gamu.current.players.forEach (p => {
+      const {profile, cards, player, drawCard} = p;
+
+      cards.forEach (c => c.render (state, context));
+
+      profile.render (state, context);
+
+      if (drawCard) {
+        drawCard.render (state, context);
+      }
+
+      if (
+        currentPlayer.type === player.type &&
+        !player.disableClick &&
+        currentPlayer.timeOut
+      ) {
+        const timeInZone = Math.floor (
+          (Date.now () - currentPlayer.timeOut) / 1000
+        );
+        if (timeInZone > 3) {
+          socket.current.emit ('shitPlayer', true);
+        }
+      }
+      player.render (state, context);
+    });
+  };
+
+  const doAnimationHealth = () => {
+    const finish = gamu.current.players.every (p => {
+      if (
+        p.profile.health === p.profile.nextHealth ||
+        p.profile.nextHealth === null
+      ) {
+        return true;
+      }
+      const diff = p.profile.health - p.profile.nextHealth;
+      if (diff > 0) {
+        p.profile.health = p.profile.health - 0.5;
+      } else {
+        p.profile.health = p.profile.health + 0.5;
+      }
+      return false;
+    });
+    if (finish) {
+      gamu.current.animation.health = false;
+    }
+  };
+  const gameLoop=  (time)=> {
+    // Update game objects in the loop
+    if (time - lastFrameTime < FRAME_MIN_TIME) {
+      //skip the frame if the call is too early
+      window.requestAnimationFrame (gameLoop);
+
+      return;
+    }
+    lastFrameTime = time; // remember the time of the rendered frame
+
+    if (gamu.current.animation.health) {
+      doAnimationHealth ();
+    }
+
+    if (gamu.current.animation.totem) {
+      doAnimationTotem ();
+    }
+    if (gamu.current.animation.drawCard) {
+      doAnimationDrawCard ();
+    }
+    if (gamu.current.animation.bunchCards) {
+      doAnimationBunchCards ();
+    }
+    drawPlayers ();
+    window.requestAnimationFrame (gameLoop);
+  }
   useLayoutEffect (() => {
     socket.current = gameId
       ? io (
@@ -342,54 +615,6 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
       setGame (game);
       images.current = loadImages ();
     });
-
-    const searchNextRound = ({profile, player}) => {
-      clearInterval (nextRoundInterval.current);
-      return setInterval (() => {
-        const currentPlayer = playerRef.current;
-        if (!profile.isPlaying) {
-          return;
-        }
-        if (profile.isPlaying && currentPlayer.type === player.type) {
-          const timePassed =
-            profile.timePerRound -
-            Math.floor ((Date.now () - profile.isPlaying) / 1000);
-
-          if (timePassed <= 0) {
-            profile.isPlaying = null;
-            socket.current.emit ('nextRound');
-            clearInterval (nextRoundInterval.current);
-          }
-        }
-      }, 100);
-    };
-    function gameLoop (time) {
-      // Update game objects in the loop
-      if (time - lastFrameTime < FRAME_MIN_TIME) {
-        //skip the frame if the call is too early
-        window.requestAnimationFrame (gameLoop);
-
-        return;
-      }
-      lastFrameTime = time; // remember the time of the rendered frame
-
-      if (gamu.current.animation.health) {
-        doAnimationHealth ();
-      }
-
-      if (gamu.current.animation.totem) {
-        doAnimationTotem ();
-      }
-      if (gamu.current.animation.drawCard) {
-        doAnimationDrawCard ();
-      }
-      if (gamu.current.animation.bunchCards) {
-        doAnimationBunchCards ();
-      }
-      drawPlayers ();
-      window.requestAnimationFrame (gameLoop);
-    }
-
     socket.current.on ('animationBunchCards', ({playersLost, cardsLooser}) => {
       doAnimationLooser (playersLost, 30);
       const currentPlayer = playerRef.current;
@@ -408,7 +633,6 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
         }
       });
     });
-
     socket.current.on ('animationTotem', ({totem}) => {
       const currentPlayer = playerRef.current;
 
@@ -440,244 +664,19 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
       gamu.current.animation.health = true;
     });
 
-    const updateTotem = totem => {
-      const currentPlayer = playerRef.current;
-      const totemPosition = updatePosition (currentPlayer, totem.position);
-      gamu.current.totem.position = totemPosition;
-    };
-
-    const updateDrawCard = playerDrawCard => {
-      const currentPlayer = playerRef.current;
-
-      const playerGame = gamu.current.players.find (
-        p => p.player.id === playerDrawCard.id
-      );
-      const positionDrawCard = playerDrawCard.drawCard.position;
-
-      if (positionDrawCard) {
-        const positionDrawCard = updatePosition (
-          currentPlayer,
-          playerDrawCard.drawCard.position
-        );
-        const drawCard = new Card ({
-          ...playerDrawCard.drawCard,
-          skinCard: playerDrawCard.skinCard,
-          image: images.current['card-' + playerDrawCard.drawCard.value],
-          position: positionDrawCard,
-        });
-
-        playerGame.drawCard = drawCard;
-      } else {
-        playerGame.drawCard = null;
-      }
-    };
-
-    const updateProfile = players => {
-      const currentPlayer = playerRef.current;
-
-      players.forEach ((p, index) => {
-        const {profile, goal, isPlaying} = p;
-        const positionGoal = updatePosition (currentPlayer, goal.position);
-
-        const newProfile = new Profile ({
-          ...profile,
-          position: {
-            x: positionGoal.x - 100,
-            y: positionGoal.y,
-          },
-          isPlaying,
-        });
-        gamu.current.players[index].profile = newProfile;
-      });
-    };
-    const updateRound = players => {
-      gamu.current.players.forEach (p => (p.profile.isPlaying = null));
-      players.forEach ((p, index) => {
-        const {isPlaying} = p;
-        gamu.current.players[index].profile.isPlaying = isPlaying;
-        if (isPlaying) {
-          nextRoundInterval.current = searchNextRound (
-            gamu.current.players[index]
-          );
-        }
-      });
-    };
-
-    const updateCards = players => {
-      const currentPlayer = playerRef.current;
-
-      players.forEach ((p, index) => {
-        const cards = p.deck.cards.map (c => {
-          let positionCard = updatePosition (currentPlayer, c.position);
-          return new Card ({
-            ...c,
-            image: images.current['card-' + c.value],
-            position: positionCard,
-            skinCard: p.skinCard,
-          });
-        });
-        gamu.current.players[index].cards = cards;
-      });
-    };
-    const updatePlayersPosition = players => {
-      const currentPlayer = playerRef.current;
-
-      players.forEach ((p, index) => {
-        const positionPlayer = updatePosition (currentPlayer, p.position);
-        gamu.current.players[index].player.disableClick = p.disableClick;
-        gamu.current.players[index].player.position = positionPlayer;
-
-      });
-    };
-
-    const initPlayers = ({players, totem}) => {
-      const currentPlayer = playerRef.current;
-
-      const newTotem = new Totem ({
-        ...totem,
-      });
-      gamu.current.totem = newTotem;
-      gamu.current.players = [];
-      players.forEach (p => {
-        const positionGoal = updatePosition (currentPlayer, p.goal.position);
-
-        const positionBunch = updatePosition (
-          currentPlayer,
-          p.deck.positionBunch
-        );
-        const positionPlayer = updatePosition (currentPlayer, p.position);
-
-        const {goal, deck, profile, timer, isPlaying} = p;
-        const newGoal = new Goal ({
-          ...goal,
-          position: positionGoal,
-          timer,
-        });
-
-        const current = currentPlayer.type === p.type;
-        const newDeck = new Deck ({
-          ...deck,
-          positionBunch,
-          current,
-        });
-
-        const newProfile = new Profile ({
-          ...profile,
-          position: {
-            x: positionGoal.x - 100,
-            y: positionGoal.y,
-          },
-          isPlaying,
-        });
-        if (isPlaying) {
-          nextRoundInterval.current = searchNextRound ({
-            profile: newProfile,
-            player: p,
-          });
-        }
-
-        const newPlayer = new Player ({...p, position: positionPlayer});
-        const cards = p.deck.cards.map (c => {
-          let positionCard = updatePosition (currentPlayer, c.position);
-
-          return new Card ({
-            ...c,
-            image: images.current['card-' + c.value],
-            position: positionCard,
-            skinCard: p.skinCard,
-          });
-        });
-        const player = {
-          goal: newGoal,
-          deck: newDeck,
-          profile: newProfile,
-          player: newPlayer,
-          bunchCards: [],
-          cards,
-        };
-        gamu.current.players.push (player);
-      });
-    };
-
-    const drawPlayers = () => {
-      if (!canvas.current) {
-        return;
-      }
-      const context = canvas.current.getContext ('2d');
-      const currentPlayer = playerRef.current;
-
-      context.clearRect (0, 0, state.screen.width, state.screen.height);
-
-      gamu.current.totem.render (playerRef.current.position, context);
-
-      gamu.current.players.forEach (p => {
-        const {deck, goal} = p;
-        deck.render (state, context);
-        goal.render (state, context);
-      });
-      Object.values (gamu.current.bunchCards).forEach (card =>
-        card.render (state, context)
-      );
-      gamu.current.players.forEach (p => {
-        const {profile, cards, player, drawCard} = p;
-
-        cards.forEach (c => c.render (state, context));
-
-        profile.render (state, context);
-
-        if (drawCard) {
-          drawCard.render (state, context);
-        }
-
-        if (
-          currentPlayer.type === player.type &&
-          !player.disableClick &&
-          currentPlayer.timeOut
-        ) {
-          const timeInZone = Math.floor (
-            (Date.now () - currentPlayer.timeOut) / 1000
-          );
-          if (timeInZone > 3) {
-            socket.current.emit ('shitPlayer', true);
-          }
-        }
-        player.render (state, context);
-      });
-    };
-
-    const doAnimationHealth = () => {
-      const finish = gamu.current.players.every (p => {
-        if (
-          p.profile.health === p.profile.nextHealth ||
-          p.profile.nextHealth === null
-        ) {
-          return true;
-        }
-        const diff = p.profile.health - p.profile.nextHealth;
-        if (diff > 0) {
-          p.profile.health = p.profile.health - 0.5;
-        } else {
-          p.profile.health = p.profile.health + 0.5;
-        }
-        return false;
-      });
-      if (finish) {
-        gamu.current.animation.health = false;
-      }
-    };
+  
     socket.current.on ('gameStart', game => {
       setGame (game);
-      const {totem, players, playerPlay} = game;
+      const {totem, playerPlay} = game;
 
       setPlayerPlay (playerPlay);
       setTotem (totem);
       initGame ();
 
       initPlayers (game);
-
+    });
       socket.current.on ('message', ({message, history}) => {
         if (history) {
-          console.log ('coucou', history);
           setGameHistory (history);
         }
         drawMessage (message, 2);
@@ -769,7 +768,7 @@ const Game = ({gameId, userPhotoURL, setGameId, namePlayer}) => {
       window.addEventListener ('mousedown', handleMouseDown);
       window.addEventListener ('mouseup', handleMouseUp);
       window.requestAnimationFrame (gameLoop);
-    });
+   
   }, []); //eslint-disable-line
   useEffect (
     () => () => {

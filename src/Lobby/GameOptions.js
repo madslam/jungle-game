@@ -14,14 +14,17 @@ const GameOptions = () => {
 
   const setTimePerRound = value => {
     setState ({...state, timePerRound: value});
-    socket.current.emit ('setTimePerRound', value);
+    socket.current.send (JSON.stringify ({action: 'setTimePerRound', data:value})) 
+
   };
   const setNumberPlayer = value => {
     setState ({...state, numberPlayer: value});
-    socket.current.emit ('setNumberPlayer', value);
+    socket.current.send (JSON.stringify ({action: 'setNumberPlayer', data:value})) 
+
   };
   const gameReady = () => {
-    socket.current.emit ('gameReady');
+    socket.current.send (JSON.stringify ({action: 'gameReady'})) 
+
   };
 
   return (
