@@ -12,7 +12,7 @@
     "@testing-library/user-event": "^7.1.2",
     "antd": "^4.5.4",
     "autoprefixer": "^10.0.2",
-    "firebase": "^7.18.0",
+    "firebase": "^10.9.0",
     "firebaseui": "^4.6.1",
     "formik": "^2.1.5",
     "i": "^0.3.6",
